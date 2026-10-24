@@ -1,0 +1,14 @@
+.venv/
+data/
+!data/README.md
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.pdf
+.ipynb_checkpoints/

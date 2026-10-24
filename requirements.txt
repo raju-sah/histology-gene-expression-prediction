@@ -1,0 +1,20 @@
+# Local analysis environment (CPU). Heavy GPU work runs in Colab notebooks.
+--extra-index-url https://download.pytorch.org/whl/cpu
+numpy>=1.26
+scipy>=1.11
+pandas>=2.1
+scikit-learn>=1.4
+h5py>=3.10
+anndata>=0.10
+pyarrow>=15
+matplotlib>=3.8
+seaborn>=0.13
+pyyaml>=6
+tqdm>=4.66
+torch>=2.3
+huggingface_hub>=0.24
+fsspec>=2024.2
+statsmodels>=0.14
+pytest>=8
+nbformat>=5.9
+tabulate

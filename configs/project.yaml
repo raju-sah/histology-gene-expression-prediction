@@ -1,0 +1,23 @@
+drive_root: /content/drive/MyDrive/hest_fm_project
+drive_dirs:
+  phase1: phase1_benchmark
+  phase2: phase2_xenium5k
+  phase4: phase4_visium
+local_embeddings: data/embeddings
+phase1_tasks: [IDC, LUNG, COAD]
+xenium5k_samples:
+  # id: group (samples sharing a group never cross train/test). No patient IDs in HEST metadata:
+  # NCBI887/888 are TMAs from one study and are grouped conservatively.
+  TENX189: lung_luad_10x
+  TENX160: ovary_ff_10x
+  TENX187: ovary_ffpe_10x
+  TENX188: cervix_10x
+  NCBI887: lung_tma_pdl
+  NCBI888: lung_tma_pdl
+excluded_samples:
+  TENX190: "labelled Xenium 5k in HEST v1.3.0 but is the Xenium v1 run (541 genes) of the TENX189 block"
+patch:
+  size_px: 224
+  target_um_per_px: 0.5
+  size_um: 112
+encoders: [resnet50, uni2_h, virchow2, conch_v15]
