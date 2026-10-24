@@ -21,3 +21,26 @@ patch:
   target_um_per_px: 0.5
   size_um: 112
 encoders: [resnet50, uni2_h, virchow2, conch_v15]
+xenium5k_organ:
+  TENX189: lung
+  NCBI887: lung
+  NCBI888: lung
+  TENX160: ovary
+  TENX187: ovary
+  TENX188: cervix
+# Phase 4 cross-platform training sets (HEST Visium, human). Assumed to be different donors from the Xenium
+# samples (different studies / 10x datasets); no shared patient IDs exist in HEST metadata.
+visium_organ:
+  TENX62: lung      # LUSC FFPE
+  TENX72: lung      # LNET FFPE
+  MISC13: lung
+  MISC14: lung
+  MISC15: lung
+  MISC16: lung      # MISC13-16: lung atlas, FFPE
+  MEND85: lung
+  MEND86: lung
+  MEND89: lung
+  MEND90: lung      # MEND85-90: healthy lung, fresh frozen
+  TENX65: ovary     # HGSOC FFPE
+  TENX51: ovary     # SOC FFPE
+  TENX50: cervix    # CESC FFPE
