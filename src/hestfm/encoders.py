@@ -29,11 +29,15 @@ class Encoder:
     micro_batch: int = 256
     dim: int | None = None
     device: str = "cuda"
+    center_crop_px: int | None = None   # crop the centre of the input patch first (smaller field of view)
 
 
 def preprocess(batch_uint8: np.ndarray | torch.Tensor, enc: Encoder, device="cuda") -> torch.Tensor:
     x = torch.as_tensor(batch_uint8).to(device, non_blocking=True)
     x = x.permute(0, 3, 1, 2).float().div_(255.0)
+    if enc.center_crop_px:
+        o = (x.shape[-1] - enc.center_crop_px) // 2
+        x = x[..., o:o + enc.center_crop_px, o:o + enc.center_crop_px]
     if x.shape[-1] != enc.input_size or x.shape[-2] != enc.input_size:
         x = F.interpolate(x, size=(enc.input_size, enc.input_size), mode=enc.interpolation,
                           align_corners=False, antialias=enc.input_size < x.shape[-1])
@@ -86,6 +90,12 @@ def build_encoder(name: str, device="cuda") -> Encoder:
         m = timm.create_model("hf-hub:bioptimus/H-optimus-1", pretrained=True, init_values=1e-5,
                               dynamic_img_size=False)
         enc = Encoder(name, m, m, 224, *HOPTIMUS, micro_batch=256, dim=1536)
+    elif name.startswith("uni2_h_c"):
+        # UNI2-h on the central crop of the 112 um patch, e.g. uni2_h_c56 = central 56 um (112 px), resized to 224.
+        um = int(name.split("_c")[-1])
+        enc = build_encoder("uni2_h", device)
+        enc.name, enc.center_crop_px = name, int(round(um / 0.5))
+        return enc
     else:
         raise ValueError(name)
     enc.device = device

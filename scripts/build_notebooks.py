@@ -21,10 +21,10 @@ def code(s):
     return nbf.v4.new_code_cell(textwrap.dedent(s).strip())
 
 
-def inline_module(name: str):
-    """A cell that writes src/hestfm/<name>.py into /content/lib so the notebook can import it."""
+def inline_module(name: str, as_name: str | None = None):
+    """A cell that writes src/hestfm/<name>.py into /content/lib/<as_name>.py so the notebook can import it."""
     body = (SRC / f"{name}.py").read_text()
-    return nbf.v4.new_code_cell(f"%%writefile /content/lib/{name}.py\n{body}")
+    return nbf.v4.new_code_cell(f"%%writefile /content/lib/{as_name or name}.py\n{body}")
 
 
 SETUP_GPU = code("""

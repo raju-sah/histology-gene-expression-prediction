@@ -47,7 +47,8 @@ def read_expression(path: str | Path, genes: list[str] | None = None):
         coords = f["coords"][:] if "coords" in f else np.zeros((len(bc), 2))
         if "counts_csr" in f:
             g = f["counts_csr"]
-            M = sp.csr_matrix((g["data"][:], g["indices"][:], g["indptr"][:]), shape=tuple(g["shape"][:]))
+            M = sp.csr_matrix((g["data"][:].astype(np.float32), g["indices"][:].astype(np.int32),
+                               g["indptr"][:].astype(np.int64)), shape=tuple(g["shape"][:]))
         else:
             M = f["counts"][:]
     if genes is not None:
@@ -99,8 +100,17 @@ def write_expression(path, counts, barcodes, genes, coords, **extra):
     with h5py.File(path, "w") as f:
         if sp.issparse(counts):
             c = sp.csr_matrix(counts)
+            c.sum_duplicates()
+            data = c.data
+            if np.allclose(data, np.round(data)) and (len(data) == 0 or data.max() < 65535):
+                data = data.astype(np.uint16)   # integer counts: compact
+            idx_dtype = np.int16 if c.shape[1] < 32767 else np.int32
             g = f.create_group("counts_csr")
-            g["data"], g["indices"], g["indptr"], g["shape"] = c.data, c.indices, c.indptr, np.array(c.shape)
+            kw = dict(compression="gzip", compression_opts=4)
+            g.create_dataset("data", data=data, **kw)
+            g.create_dataset("indices", data=c.indices.astype(idx_dtype), **kw)
+            g.create_dataset("indptr", data=c.indptr.astype(np.int64), **kw)
+            g["shape"] = np.array(c.shape)
         else:
             f.create_dataset("counts", data=np.asarray(counts, dtype=np.float32))
         f.create_dataset("barcodes", data=np.asarray(barcodes).astype("S"))

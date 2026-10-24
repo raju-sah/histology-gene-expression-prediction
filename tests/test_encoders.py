@@ -23,3 +23,13 @@ def test_embed_microbatches_preserve_order():
     ref = embed(x, _enc(micro=100), device="cpu")
     assert e.dtype == np.float16 and e.shape == (7, 3)
     assert np.allclose(e, ref)
+
+
+def test_center_crop_uses_central_pixels():
+    x = np.zeros((1, 224, 224, 3), dtype=np.uint8)
+    x[:, 56:168, 56:168] = 255
+    e = _enc(224)
+    e.center_crop_px = 112
+    out = preprocess(x, e, device="cpu")
+    assert out.shape == (1, 3, 224, 224)
+    assert np.allclose(out.numpy(), ((1 - np.array(IMAGENET[0])) / np.array(IMAGENET[1]))[None, :, None, None], atol=1e-4)

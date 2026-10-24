@@ -46,3 +46,15 @@ def test_run_cv_refuses_leaky_folds():
         run_cv(s, [Fold("bad", ("S0", "S1"), ("S1",))], lambda: RidgeCVHead())
     with pytest.raises(LeakageError):
         run_cv(s, [Fold("bad", ("S0",), ("S1",))], lambda: RidgeCVHead(), groups={"S0": "p", "S1": "p", "S2": "q"})
+
+
+def test_sparse_counts_stored_compactly(tmp_path):
+    import h5py
+    M = sp.random(100, 5000, density=0.05, format="csr", random_state=0)
+    M.data = np.ceil(M.data * 10)
+    write_expression(tmp_path / "e.h5", M, np.arange(100).astype(str), [f"g{i}" for i in range(5000)], np.zeros((100, 2)))
+    with h5py.File(tmp_path / "e.h5") as f:
+        assert f["counts_csr/data"].dtype == np.uint16 and f["counts_csr/indices"].dtype == np.int16
+    from hestfm.data import read_expression
+    R, *_ = read_expression(tmp_path / "e.h5")
+    assert np.array_equal(R.toarray(), M.toarray())
