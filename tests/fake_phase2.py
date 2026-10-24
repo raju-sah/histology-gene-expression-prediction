@@ -27,6 +27,9 @@ def make_fake_phase2(root, encoders=("uni2_h", "virchow2"), n_genes=40, grid=(12
         lam = np.exp(np.clip(z @ B, -3, 3) + 0.3)
         Y = sp.csr_matrix(rng.poisson(lam).astype(np.float32))
         comp = rng.poisson(3, size=(n, len(TYPES) + 2))
+        for sub, f in (("expression_w050", 0.5), ("expression_w200", 2.0)):
+            write_expression(f"{root}/{dataset}/{sub}/{s}.h5", sp.csr_matrix(rng.poisson(lam * f).astype(np.float32)),
+                             bc, genes, coords)
         write_expression(f"{root}/{dataset}/expression/{s}.h5", Y, bc, genes, coords,
                          n_cells=comp.sum(1).astype(np.int32), composition=comp.astype(np.int32),
                          composition_cols=np.array(TYPES + ["unassigned", "low_quality"]).astype("S"))

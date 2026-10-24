@@ -108,7 +108,7 @@ def phase1():
         **Output (Drive):** `MyDrive/hest_fm_project/embeddings/phase1/<TASK>/{resnet50,uni2_h,expression}/<sample>.h5`
         plus `MyDrive/hest_fm_project/embeddings/phase1/run_summary.json` and `sanity_hest_ridge.json`.
 
-        **Afterwards download** the folder `MyDrive/hest_fm_project/embeddings/phase1` (~0.3 GB) to `data/embeddings/phase1`.
+        **Afterwards download** the folder `MyDrive/hest_fm_project/embeddings/phase1` (~0.4 GB) to `data/embeddings/phase1`.
         """),
         SETUP_GPU,
         code("!pip -q install 'timm>=1.0.9' 'huggingface_hub>=0.24' h5py anndata"),

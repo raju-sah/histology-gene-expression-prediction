@@ -1,0 +1,100 @@
+% Workshop-style two-column draft. Numbers and tables come from paper/generated/ (scripts/make_paper_numbers.py).
+% Undefined macros mean the result does not exist yet; \pending marks a missing value. Build: tectonic paper/main.tex
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{booktabs,graphicx,amsmath,xcolor,hyperref}
+\usepackage[numbers]{natbib}
+\input{generated/numbers.tex}
+% Fallbacks so the draft compiles before results exist.
+\providecommand{\pending}{\textcolor{red}{[pending]}}
+\newcommand{\num}[1]{\ifcsname #1\endcsname\csname #1\endcsname\else\pending\fi}
+\newcommand{\todo}[1]{\textcolor{blue}{[TODO: #1]}}
+\newcommand{\fig}[1]{\IfFileExists{../reports/#1}{\includegraphics[width=\columnwidth]{../reports/#1}}{\fbox{\parbox{0.9\columnwidth}{\centering\pending\ \texttt{\detokenize{#1}}}}}}
+
+\title{Which genes can a pathology foundation model see?\\
+\large A predictability atlas of Xenium 5k expression from H\&E}
+\author{\todo{authors}}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We ask which of the $\sim$5{,}000 genes measured by Xenium Prime 5K can be predicted from H\&E morphology with
+frozen pathology foundation models, and what distinguishes predictable genes. On \num{NXeniumSamples} Xenium 5k
+samples from HEST-1k~\cite{jaume2024hest} (lung, ovary, cervix), we aggregate cell-level counts into pseudo-spots
+aligned with \num{PatchUm}\,$\mu$m H\&E patches, extract frozen embeddings (UNI2-h, Virchow2, CONCH v1.5), and
+fit linear heads under leave-one-group-out splits. The best encoder reaches a gene-averaged Pearson $r$ of
+\num{AtlasUniTwoH} (UNI2-h), against \num{AtlasComposition} for a model given the measured cell-type composition.
+\todo{one-sentence finding on what explains predictability, from Section 4.3.}
+\end{abstract}
+
+\section{Introduction}
+\todo{motivation: spatial transcriptomics is expensive; H\&E is ubiquitous; most prior benchmarks use 50 highly
+variable genes, which hides gene-level heterogeneity. Contributions: (i) a gene-level predictability atlas on
+Xenium 5k, (ii) an analysis of what explains predictability, (iii) context and cross-platform ablations.}
+
+\section{Related work}
+\todo{gene expression prediction from H\&E (cite).}
+\todo{pathology foundation models: UNI/UNI2, Virchow2, CONCH, TITAN, H-optimus (cite).}
+\todo{benchmarks: HEST-1k/HEST-Benchmark~\cite{jaume2024hest}; other benchmarks (cite).}
+\todo{spatial context models for expression prediction (cite).}
+
+\section{Data and methods}
+\paragraph{Data.} HEST-1k v1.3.0~\cite{jaume2024hest} lists 7 samples as Xenium 5k; one (TENX190) is the
+Xenium v1 run of the same block as TENX189 and is excluded. The remaining \num{NXeniumSamples} samples form
+\num{NXeniumGroups} groups; samples of one TMA study share a group because donor identities are not available.
+\paragraph{Pseudo-spots.} We stream transcripts (QV$\geq$20, assigned to a cell, real genes), place each cell at
+the mean H\&E-registered position of its transcripts, and sum the cells whose position lies in the
+\num{PatchUm}\,$\mu$m footprint of each HEST patch (224\,px at 0.5\,$\mu$m/px). Neighbouring footprints overlap
+because HEST patches lie on a 100\,$\mu$m grid. Sensitivity windows of 0.5$\times$ and 2$\times$ are also built.
+\paragraph{Encoders and heads.} Frozen UNI2-h, Virchow2 (class token + mean patch token) and CONCH v1.5 embeddings;
+ResNet50 (ImageNet, truncated, as in HEST) for Phase~1. Heads: standardisation, PCA-256 and ridge regression with a
+per-gene penalty chosen on an inner validation group taken from the training samples only; an MLP for comparison.
+\paragraph{Evaluation.} Per-gene Pearson $r$ between predicted and measured $\log(1+\text{count})$ on held-out
+groups, averaged over genes and then folds, as in HEST-Benchmark; 95\% CIs bootstrap over held-out samples. A
+label-permutation control gives $r=\num{AtlasNullR}$.
+
+\section{Results}
+\subsection{Reproducing HEST-Benchmark}
+\begin{table}[t]\centering\small\input{generated/tab_phase1.tex}
+\caption{HEST-Benchmark reproduction (ridge + PCA-256, published protocol).}\label{tab:p1}\end{table}
+Table~\ref{tab:p1} compares our pipeline with the published HEST-Benchmark numbers. \todo{comment once available.}
+
+\subsection{A gene-level predictability atlas}
+\begin{table}[t]\centering\small\input{generated/tab_atlas.tex}
+\caption{Xenium 5k atlas, leave-one-group-out, \num{AtlasNGenes} genes.}\label{tab:atlas}\end{table}
+\begin{figure}[t]\centering\fig{phase2/figures/fig_r_distribution.png}
+\caption{Per-gene Pearson $r$ on held-out groups.}\label{fig:dist}\end{figure}
+
+\subsection{What explains predictability?}
+Expression level, sparsity, spatial autocorrelation (Moran's $I$), cell-type specificity ($\tau$) and cross-encoder
+agreement jointly explain $R^2=\num{ExplainRsq}$ of the per-gene variation in $r$. Spearman $\rho$ with Moran's
+$I$ is \num{RhoMoransI} (\num{PrhoMoransI} given mean expression). \todo{interpretation.}
+\begin{figure}[t]\centering\fig{phase2/figures/fig_image_vs_composition.png}
+\caption{Image model vs.\ composition oracle per gene.}\label{fig:comp}\end{figure}
+
+\subsection{Spatial context}
+Adding the mean of the first ring of neighbouring patches changes the gene-averaged $r$ by \num{GainUniTwoHKOne};
+\num{GaingenesUniTwoHKOne} genes gain more than 0.05 in most folds. \todo{which genes gain.}
+
+\subsection{Generalisation}
+\begin{table}[t]\centering\small\input{generated/tab_generalization.tex}
+\caption{Per-test-sample $r$ by training set (library-size-normalised targets).}\label{tab:gen}\end{table}
+
+\subsection{Robustness}
+Seed s.d.\ of the gene-averaged $r$: \num{SeedsdUniTwoH}. Expression window 56/112/224\,$\mu$m:
+\num{WindowFiveSix}/\num{WindowOneOneTwo}/\num{WindowTwoTwoFour}. Field of view 56 vs 112\,$\mu$m:
+\num{FovFiveSix} vs \num{FovOneOneTwo}. Ridge vs MLP: \num{HeadRidge} vs \num{HeadMlp}.
+
+\section{Limitations}
+Few Xenium 5k samples and no donor identifiers; groups are a conservative proxy. Coarse marker-based cell typing.
+Pseudo-spots overlap between neighbouring patches. \todo{more.}
+
+\section*{Data and licences}
+HEST-1k and HEST-Benchmark are CC BY-NC-SA 4.0; UNI2-h, Virchow2, TITAN/CONCH v1.5 are CC BY-NC-ND 4.0 and were used
+only to extract frozen embeddings. No weights are released. Non-commercial research use only.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}
