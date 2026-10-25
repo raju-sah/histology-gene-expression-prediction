@@ -21,7 +21,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import common_genes, load_sparse_samples, run_atlas_chunked  # noqa: E402
+from hestfm.atlas import shared_fit_cache, common_genes, load_sparse_samples, run_atlas_chunked  # noqa: E402
 from hestfm.evaluate import log_experiment  # noqa: E402
 from hestfm.splits import Fold, assert_no_leakage  # noqa: E402
 
@@ -83,7 +83,7 @@ def main(argv=None):
 
     for f in folds:
         print(f"== {f.name}: train {len(f.train)} samples -> test {f.test}")
-    _, sg, _, _ = run_atlas_chunked(samples, folds, encs, groups, root, ds, genes, chunk=a.chunk,
+    _, sg, _, _ = run_atlas_chunked(samples, folds, encs, groups, root, ds, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                     y_kind=a.y_kind, block=a.block, verbose=False)
     meta = {f.name: f for f in folds}
     sg["setting"] = sg.fold.map(lambda n: meta[n].meta["setting"])

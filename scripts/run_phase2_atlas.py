@@ -20,7 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import (common_genes, gene_features, load_sparse_samples, load_y, run_atlas,  # noqa: E402
+from hestfm.atlas import (shared_fit_cache, common_genes, gene_features, load_sparse_samples, load_y, run_atlas,  # noqa: E402
                           run_atlas_chunked)
 from hestfm.celltypes import tau  # noqa: E402
 from hestfm.evaluate import log_experiment  # noqa: E402
@@ -100,7 +100,7 @@ def main(argv=None):
         out = Path(a.out) / yk
         out.mkdir(parents=True, exist_ok=True)
         per_chunk = (lambda s, g: gene_features(s, g)) if feats is None else None
-        res = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, genes, chunk=a.chunk,
+        res = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                 y_kind=yk, block=a.block, per_chunk=per_chunk)
         gf, sg, ag, fi = res[:4]
         if per_chunk is not None:
@@ -110,7 +110,7 @@ def main(argv=None):
             "ncells": lambda s: np.log1p(s.extra["n_cells"].astype(np.float32))[:, None],
         }
         for name, fn in bl.items():
-            g2, s2, _, f2 = run_atlas_chunked(samples, folds, [], groups, root, DATASET, genes, chunk=a.chunk,
+            g2, s2, _, f2 = run_atlas_chunked(samples, folds, [], groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                               y_kind=yk, block=a.block, feature_fn=fn, verbose=False)
             for d in (g2, s2, f2):
                 d["encoder"] = d["encoder"].replace("features", name)

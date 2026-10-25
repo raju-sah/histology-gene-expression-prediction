@@ -90,3 +90,17 @@ def test_chunked_matches_single_run(tmp_path):
         b = gf2.sort_values(["fold", "gene_idx"]).pearson.values
         assert np.allclose(a, b, atol=1e-5, equal_nan=True), kind
         assert list(feats.gene) == genes
+
+
+def test_stream_pca_matches_sklearn():
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+    from hestfm.atlas import StreamPCA
+    rng = np.random.default_rng(0)
+    X = (rng.normal(size=(3000, 40)) @ rng.normal(size=(40, 40))).astype(np.float16)
+    sp_ = StreamPCA(10, rows=700).fit(X)
+    Z1 = sp_.transform(X)
+    Xs = StandardScaler().fit_transform(X.astype(np.float64))
+    Z2 = PCA(10, svd_solver="full").fit_transform(Xs)
+    for j in range(10):   # equal up to sign
+        assert min(np.abs(Z1[:, j] - Z2[:, j]).max(), np.abs(Z1[:, j] + Z2[:, j]).max()) < 1e-6 * np.abs(Z2).max() + 1e-6

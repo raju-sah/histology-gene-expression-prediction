@@ -21,7 +21,7 @@ import scipy.sparse as sp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import (common_genes, load_sparse_samples, load_y, run_atlas_chunked,  # noqa: E402
+from hestfm.atlas import (shared_fit_cache, common_genes, load_sparse_samples, load_y, run_atlas_chunked,  # noqa: E402
                           transform_y)
 from hestfm.context import AttentionContextHead, ring_mean_features  # noqa: E402
 from hestfm.evaluate import log_experiment  # noqa: E402
@@ -94,7 +94,7 @@ def main(argv=None):
                                     ring_mean_features(x.astype(np.float32), c, k))
     for e in encs:
         variants += [e] + [f"{e}_k{k}" for k in a.ks]
-    gf, sg, _, fi = run_atlas_chunked(samples, folds, variants, groups, root, DATASET, genes, chunk=a.chunk,
+    gf, sg, _, fi = run_atlas_chunked(samples, folds, variants, groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                       y_kind=a.y_kind, block=a.block)
 
     if a.attention_encoder in encs:

@@ -20,7 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import common_genes, load_sparse_samples, run_atlas_chunked  # noqa: E402
+from hestfm.atlas import shared_fit_cache, common_genes, load_sparse_samples, run_atlas_chunked  # noqa: E402
 from hestfm.data import SampleData  # noqa: E402
 from hestfm.evaluate import log_experiment, run_cv  # noqa: E402
 from hestfm.heads import MLPHead, RidgeCVHead  # noqa: E402
@@ -81,7 +81,7 @@ def main(argv=None):
         samples = load_sparse_samples(root, DATASET, encs, ids, genes, **LEAN)
         rows = []
         for seed in a.seeds:
-            gf, sg, _, _ = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, gseed, chunk=a.chunk,
+            gf, sg, _, _ = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, gseed, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                              y_kind=a.y_kind, block=a.block, seed=seed, verbose=False)
             for e in encs:
                 m, lo, hi = score(gf, sg, e)
@@ -103,7 +103,7 @@ def main(argv=None):
                 g_w = common_genes(root, DATASET, ids, subdir=w)
                 g_w = sorted(set(g_w) & set(genes))
                 samples = load_sparse_samples(root, DATASET, encs[:1], ids, g_w, subdir=w, **LEAN)
-                gf, sg, _, _ = run_atlas_chunked(samples, folds, encs[:1], groups, root, DATASET, g_w, chunk=a.chunk,
+                gf, sg, _, _ = run_atlas_chunked(samples, folds, encs[:1], groups, root, DATASET, g_w, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                                  subdir=w, y_kind=a.y_kind, block=a.block, verbose=False)
                 m, lo, hi = score(gf, sg, encs[0])
                 rows.append({"encoder": encs[0], "window_um": um, "pearson_mean": m, "ci_lo": lo, "ci_hi": hi,
@@ -119,7 +119,7 @@ def main(argv=None):
         if all((root / DATASET / "uni2_h_c56" / f"{s}.h5").exists() for s in ids) and "uni2_h" in encs:
             samples = load_sparse_samples(root, DATASET, ["uni2_h", "uni2_h_c56"], ids, genes, **LEAN)
             gf, sg, _, _ = run_atlas_chunked(samples, folds, ["uni2_h", "uni2_h_c56"], groups, root, DATASET, genes,
-                                             chunk=a.chunk, y_kind=a.y_kind, block=a.block, verbose=False)
+                                             chunk=a.chunk, fit_cache=shared_fit_cache(root), y_kind=a.y_kind, block=a.block, verbose=False)
             rows = []
             for e, um in (("uni2_h", 112), ("uni2_h_c56", 56)):
                 m, lo, hi = score(gf, sg, e)

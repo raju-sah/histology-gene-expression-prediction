@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from itertools import combinations
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -63,6 +64,7 @@ def load_sparse_samples(root, dataset, encoders, sample_ids, genes, subdir="expr
                     extra[k] = f[k][:][rows]
         out[s] = SparseSample(s, X, M[rows] if keep_y else None, keep_bc, coords[rows], extra)
         del M
+        release_memory()
     return out
 
 
@@ -74,10 +76,19 @@ def load_y(root, dataset, sample_id, genes, barcodes, subdir="expression") -> sp
 
 
 def run_atlas_chunked(samples, folds, encoders, groups, root, dataset, genes, chunk=1000, subdir="expression",
-                      per_chunk=None, **kw):
+                      per_chunk=None, fit_cache=None, **kw):
     """run_atlas over gene chunks loaded from disk one at a time (bounded memory). Fold PCA is recomputed per
     chunk; results are identical to a single run_atlas call. `per_chunk(samples, gene_names)` is called after
     each chunk is loaded (e.g. to compute gene features) and its DataFrames are concatenated."""
+    import shutil
+    import tempfile
+    own_cache = fit_cache is None   # temp cache removed at the end; pass a directory to keep/reuse fits
+    if own_cache:
+        base = Path(root).parent / "tmp_fitcache"   # data/tmp_fitcache (gitignored), removed below
+        base.mkdir(parents=True, exist_ok=True)
+        fit_cache = tempfile.mkdtemp(dir=base)
+    Path(fit_cache).mkdir(parents=True, exist_ok=True)
+    kw["fit_cache"] = fit_cache
     parts, extra_parts, info = ([], [], []), [], None
     for c0 in range(0, len(genes), chunk):
         g = list(genes[c0:c0 + chunk])
@@ -94,6 +105,8 @@ def run_atlas_chunked(samples, folds, encoders, groups, root, dataset, genes, ch
         print(f"  chunk genes {c0 + len(g)}/{len(genes)} done", flush=True)
     for v in samples.values():
         v.Y = None
+    if own_cache:
+        shutil.rmtree(fit_cache, ignore_errors=True)
     cat = lambda x: pd.concat(x, ignore_index=True) if x else pd.DataFrame()
     out = (cat(parts[0]), cat(parts[1]), cat(parts[2]), info)
     return out + ((pd.concat(extra_parts),) if per_chunk is not None else ())
@@ -114,9 +127,53 @@ def transform_y(Y: sp.csr_matrix, kind: str = "log1p", totals: np.ndarray | None
     return Y
 
 
+class StreamPCA:
+    """Standardise + exact PCA with bounded memory: the D x D covariance is accumulated over row chunks of X
+    (any float dtype, e.g. float16), so no full-size float32/float64 copy of X is ever made. Equivalent to
+    StandardScaler -> PCA(k) (exact eigendecomposition instead of randomized SVD; component signs may differ,
+    which does not change ridge predictions)."""
+
+    def __init__(self, k: int, rows: int = 8192):
+        self.k, self.rows = k, rows
+
+    def _chunks(self, X):
+        for i in range(0, len(X), self.rows):
+            yield np.asarray(X[i:i + self.rows], dtype=np.float64)
+
+    def fit(self, X):
+        n, d = X.shape
+        s1, s2 = np.zeros(d), np.zeros(d)
+        for c in self._chunks(X):
+            s1 += c.sum(0)
+            s2 += (c * c).sum(0)
+        self.mean_ = s1 / n
+        var = np.maximum(s2 / n - self.mean_ ** 2, 0)
+        self.scale_ = np.where(var > 0, np.sqrt(var), 1.0)
+        C = np.zeros((d, d))
+        for c in self._chunks(X):
+            z = (c - self.mean_) / self.scale_
+            C += z.T @ z
+        w, v = np.linalg.eigh(C / max(n - 1, 1))
+        self.components_ = v[:, ::-1][:, :self.k]
+        return self
+
+    def transform(self, X):
+        return np.concatenate([((c - self.mean_) / self.scale_) @ self.components_ for c in self._chunks(X)])
+
+
+def release_memory():
+    """Return freed heap pages to the OS (glibc keeps them otherwise, inflating RSS after large temporaries)."""
+    try:
+        import ctypes
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except OSError:
+        pass
+
+
 class _FoldSVD:
     def __init__(self, X, pca_dim, seed):
-        self.pre = _Preproc(pca_dim, seed).fit(X)
+        small = pca_dim is None or pca_dim >= min(X.shape)
+        self.pre = _Preproc(None, seed).fit(np.asarray(X, np.float32)) if small else StreamPCA(pca_dim).fit(X)
         Z = self.pre.transform(X).astype(np.float64)
         self.zm = Z.mean(0)
         U, self.s, Vt = np.linalg.svd(Z - self.zm, full_matrices=False)
@@ -133,6 +190,48 @@ class _FoldSVD:
         uy = (Yb.T @ self.U).T if sp.issparse(Yb) else self.U.T @ Yb
         return np.asarray(uy, dtype=np.float64) - np.outer(self.Usum, ym), ym
 
+    FIELDS = ("U", "s", "Usum")
+
+    def save(self, d: Path, prefix: str):
+        for k in self.FIELDS:
+            np.save(d / f"{prefix}_{k}.npy", getattr(self, k))
+
+    @classmethod
+    def load(cls, d: Path, prefix: str):
+        """A fitted factorisation read back from disk (U memory-mapped); supports uty() and .s only."""
+        obj = cls.__new__(cls)
+        for k in cls.FIELDS:
+            setattr(obj, k, np.load(d / f"{prefix}_{k}.npy", mmap_mode="r" if k == "U" else None))
+        return obj
+
+
+def _fit_key(fold, e, pca_dim, seed, X):
+    import hashlib
+    probe = np.asarray(X[:: max(1, len(X) // 50)], dtype=np.float64)
+    h = hashlib.sha1(repr((fold.train, fold.test, e, pca_dim, seed, X.shape, float(probe.sum()),
+                           float((probe ** 2).sum()))).encode()).hexdigest()[:16]
+    return f"{e}_{h}"
+
+
+def _fold_fits(Xtr, Xte, val, pdim, seed, cache: Path | None, key: str | None):
+    """(sel, B_val, full, B_test) for one encoder/fold; cached on disk when `cache` is given, because the fits
+    depend only on the embeddings and the fold, not on the genes (reused across gene chunks)."""
+    if cache is not None and (cache / f"{key}_done").exists():
+        return (_FoldSVD.load(cache, key + "_sel"), np.load(cache / f"{key}_Bval.npy"),
+                _FoldSVD.load(cache, key + "_full"), np.load(cache / f"{key}_Bte.npy"))
+    sel = _FoldSVD(Xtr[~val], pdim, seed)
+    full = _FoldSVD(Xtr, pdim, seed)
+    out = (sel, sel.project(Xtr[val]), full, full.project(Xte))
+    if cache is not None:
+        sel.save(cache, key + "_sel")
+        full.save(cache, key + "_full")
+        np.save(cache / f"{key}_Bval.npy", out[1])
+        np.save(cache / f"{key}_Bte.npy", out[3])
+        (cache / f"{key}_done").touch()
+        return _fold_fits(Xtr, Xte, val, pdim, seed, cache, key)   # use the memory-mapped copy
+    return out
+
+
 
 def _ridge_pred(B, s, UTy, ym, alpha):
     """alpha: scalar or (g,) per gene."""
@@ -142,8 +241,10 @@ def _ridge_pred(B, s, UTy, ym, alpha):
 
 def run_atlas(samples: dict[str, SparseSample], folds: list[Fold], encoders: list[str], groups: dict[str, str],
               y_kind: str = "log1p", block: int = 1000, pca_dim: int | None = 256, alphas=DEFAULT_ALPHAS,
-              seed: int = 0, feature_fn=None, verbose=True):
+              seed: int = 0, feature_fn=None, verbose=True, fit_cache: str | Path | None = None):
     """Returns (gene_fold, sample_gene, agreement, fold_info) DataFrames.
+
+    `fit_cache`: directory where per-encoder/fold PCA+SVD fits are stored and reused (gene-chunked runs).
 
     `feature_fn(sample) -> (N, k)` adds a pseudo-encoder named "features" (e.g. cell-type composition) when given.
     """
@@ -175,14 +276,17 @@ def run_atlas(samples: dict[str, SparseSample], folds: list[Fold], encoders: lis
         Ytr_fit, Ytr_val = Ytr[np.where(~val)[0]], Ytr[np.where(val)[0]]
         fits = {}
         for e in names:
-            Xtr = np.concatenate([X_of(s, e) for s in tr]).astype(np.float32)
-            Xte = np.concatenate([X_of(s, e) for s in te]).astype(np.float32)
+            Xtr = np.concatenate([X_of(s, e) for s in tr])   # keeps the stored dtype (float16 in lean mode)
+            dim = Xtr.shape[1]
+            Xte = np.concatenate([X_of(s, e) for s in te])
             pdim = pca_dim if e != "features" else None
-            sel = _FoldSVD(Xtr[~val], pdim, seed)
-            full = _FoldSVD(Xtr, pdim, seed)
-            fits[e] = (sel, sel.project(Xtr[val]), full, full.project(Xte))
-            fi.append({"fold": fold.name, "encoder": e, "n_train": len(Xtr), "n_val": int(val.sum()), "n_test": len(Xte),
-                       "dim": Xtr.shape[1]})
+            cache = Path(fit_cache) if (fit_cache is not None and e != "features") else None
+            key = _fit_key(fold, e, pdim, seed, Xtr) if cache is not None else None
+            fits[e] = _fold_fits(Xtr, Xte, val, pdim, seed, cache, key)
+            del Xtr, Xte
+            release_memory()
+            fi.append({"fold": fold.name, "encoder": e, "n_train": int(len(val)), "n_val": int(val.sum()),
+                       "n_test": int(len(fits[e][3])), "dim": int(dim)})
         for b0 in range(0, G, block):
             gidx = np.arange(b0, min(G, b0 + block))
             yte = Yte[:, gidx].toarray()
@@ -256,3 +360,9 @@ def gene_features(samples: dict[str, SparseSample], genes: list[str], y_kind="lo
         mi.append(np.concatenate([morans_i(Ys[:, b0:b0 + block], s.coords, r) for b0 in range(0, len(genes), block)]))
     rows["morans_i"] = np.nanmean(np.vstack(mi), axis=0)
     return pd.DataFrame(rows, index=pd.Index(genes, name="gene"))
+
+
+def shared_fit_cache(root) -> Path:
+    """Persistent fold-fit cache next to the embeddings (data/tmp_fitcache/shared, gitignored). Keys hash the fold,
+    encoder, seed, PCA size and the embeddings, so fits are reused safely across runs, target kinds and phases."""
+    return Path(root).resolve().parent / "tmp_fitcache" / "shared"

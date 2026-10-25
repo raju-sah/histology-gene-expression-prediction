@@ -77,8 +77,12 @@ def _binned_median_line(x, y, nbins=20):
 
 def _limits(x, y):
     ok = np.isfinite(x) & np.isfinite(y)
-    lim = np.max(np.abs(np.r_[x[ok], y[ok]])) * 1.05 if ok.any() else 1.0
-    return (-lim, lim)
+    if not ok.any():
+        return (-1.0, 1.0)
+    v = np.r_[x[ok], y[ok]]
+    lo, hi = min(0.0, v.min()), v.max()   # tight data range (identity line stays on the diagonal)
+    pad = 0.05 * (hi - lo or 1.0)
+    return (lo - pad, hi + pad)
 
 
 def _hexbin_panel(ax, x, y, xcol, enc):
@@ -91,7 +95,7 @@ def _hexbin_panel(ax, x, y, xcol, enc):
             ax.plot(line[0], line[1], color=DARKLINE, linewidth=1.2)
     _style_axes(ax)
     _grid(ax)
-    ax.set_xlabel(xcol)
+    ax.set_xlabel({"mean_log1p": "Mean log(1 + count)", "morans_i": "Moran's I (spatial autocorrelation)"}.get(xcol, xcol))
     ax.set_title(enc, color=TEXT, fontsize=8)
     _legend(ax, [Line2D([], [], color=DARKLINE, lw=1.2)], ["binned median"],
             loc="upper left")
@@ -103,7 +107,7 @@ def fig_r_distribution(df, encoders, palette, out_dir, paths):
     n = len(order)
     fig, ax = plt.subplots(figsize=(3.3 if n <= 2 else 6.8, 0.35 + 0.45 * n))
     data = [df[f"r_{e}"].dropna().to_numpy() for e in order]
-    bp = ax.boxplot(data, vert=False, patch_artist=True, widths=0.55,
+    bp = ax.boxplot(data, orientation="horizontal", patch_artist=True, widths=0.55,
                     tick_labels=order, showfliers=False,
                     medianprops={"color": "white", "linewidth": 1.0},
                     whiskerprops={"color": TEXT, "linewidth": 0.8},
@@ -116,8 +120,7 @@ def fig_r_distribution(df, encoders, palette, out_dir, paths):
     _style_axes(ax)
     _grid(ax)
     ax.set_xlabel("Per-gene Pearson r (held-out samples)")
-    if n >= 2:
-        _legend(ax, [Patch(facecolor=c) for c in cols], order, loc="lower right")
+    # encoders are named on the y axis (direct labels), so no separate legend box
     fig.tight_layout()
     _save(fig, out_dir, "fig_r_distribution", paths)
 
@@ -149,7 +152,7 @@ def fig_r_by_celltype(df, best, color, out_dir, paths):
     fig, ax = plt.subplots(figsize=(3.3, 0.5 + 0.28 * max(len(groups), 1)))
     if groups:
         data = [r[types == t] for t in groups]
-        bp = ax.boxplot(data, vert=False, patch_artist=True, widths=0.6,
+        bp = ax.boxplot(data, orientation="horizontal", patch_artist=True, widths=0.6,
                         tick_labels=[f"{t} (n={len(d)})" for t, d in zip(groups, data)],
                         showfliers=False,
                         medianprops={"color": "white", "linewidth": 1.0},
@@ -225,10 +228,14 @@ def fig_image_vs_composition(df, best, color, out_dir, paths):
     ax.set_ylim(lim)
     diff = np.where(ok, y - x, -np.inf)
     genes = df["gene"].astype(str).to_numpy()
-    for i in np.argsort(diff)[::-1][:10]:
-        if np.isfinite(diff[i]):
-            ax.annotate(genes[i], (x[i], y[i]), fontsize=7, color=GRAY,
-                        xytext=(2, 2), textcoords="offset points")
+    top = [i for i in np.argsort(diff)[::-1][:10] if np.isfinite(diff[i])]
+    # labels in a column at the upper left, ordered by y, with thin leader lines (no overlaps)
+    span = lim[1] - lim[0]
+    for rank, i in enumerate(sorted(top, key=lambda j: -y[j])):
+        ty = lim[1] - span * (0.04 + 0.055 * rank)
+        tx = lim[0] + span * 0.04
+        ax.annotate(genes[i], (x[i], y[i]), xytext=(tx, ty), fontsize=6.5, color=TEXT, va="center",
+                    arrowprops=dict(arrowstyle="-", color=GRAY, lw=0.4, shrinkA=0, shrinkB=1))
     _style_axes(ax)
     _grid(ax)
     ax.set_xlabel("r (composition baseline)")
