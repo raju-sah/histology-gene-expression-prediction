@@ -21,7 +21,8 @@ import scipy.sparse as sp
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import common_genes, load_sparse_samples, run_atlas, transform_y  # noqa: E402
+from hestfm.atlas import (common_genes, load_sparse_samples, load_y, run_atlas_chunked,  # noqa: E402
+                          transform_y)
 from hestfm.context import AttentionContextHead, ring_mean_features  # noqa: E402
 from hestfm.evaluate import log_experiment  # noqa: E402
 from hestfm.metrics import pearson_per_gene  # noqa: E402
@@ -41,15 +42,15 @@ DEVICE = _device()
 def attention_cv(samples, folds, enc, groups, y_kind, genes_idx, k=1, seed=0, max_epochs=60):
     assert_no_leakage(folds, groups)
     rows = []
-    Ys = {s: transform_y(v.Y, y_kind)[:, genes_idx].tocsr() for s, v in samples.items()}
+    Ys = {s: transform_y(v.Y, y_kind, v.extra.get("total")).tocsr() for s, v in samples.items()}   # Y = gene subset
     coords = {s: v.coords for s, v in samples.items()}
     for fold in folds:
         tr, te = list(fold.train), list(fold.test)
-        X = np.concatenate([samples[s].X[enc] for s in tr])
+        X = np.concatenate([samples[s].X[enc] for s in tr]).astype(np.float32)
         sid = np.concatenate([[s] * len(samples[s].X[enc]) for s in tr])
         val = inner_validation_mask(sid, np.concatenate([coords[s] for s in tr]), seed=seed, groups=groups)
         h = AttentionContextHead(k=k, seed=seed, max_epochs=max_epochs, device=DEVICE).fit(X, coords, sid, sp.vstack([Ys[s] for s in tr]), val)
-        Xte = np.concatenate([samples[s].X[enc] for s in te])
+        Xte = np.concatenate([samples[s].X[enc] for s in te]).astype(np.float32)
         sid_te = np.concatenate([[s] * len(samples[s].X[enc]) for s in te])
         P = h.predict(Xte, coords, sid_te)
         Yte = sp.vstack([Ys[s] for s in te]).toarray()
@@ -64,7 +65,9 @@ def main(argv=None):
     ap.add_argument("--root", default=str(ROOT / "data" / "embeddings"))
     ap.add_argument("--encoders", nargs="+", default=["uni2_h", "virchow2", "conch_v15"])
     ap.add_argument("--attention-encoder", default="uni2_h")
-    ap.add_argument("--attention-genes", type=int, default=0, help="0 = all genes")
+    ap.add_argument("--attention-genes", type=int, default=1000,
+                    help="fixed random gene subset for the attention head (CPU/RAM bound); 0 = all genes")
+    ap.add_argument("--chunk", type=int, default=250, help="genes loaded per pass (memory bound)")
     ap.add_argument("--attention-epochs", type=int, default=60)
     ap.add_argument("--ks", nargs="+", type=int, default=[1, 2])
     ap.add_argument("--y-kind", default="log1p")
@@ -82,21 +85,28 @@ def main(argv=None):
     encs = [e for e in a.encoders if all((root / DATASET / e / f"{s}.h5").exists() for s in groups)]
     folds = leave_one_group_out(groups)
     genes = common_genes(root, DATASET, list(groups))
-    samples = load_sparse_samples(root, DATASET, encs, list(groups), genes)
+    samples = load_sparse_samples(root, DATASET, encs, list(groups), genes, x_dtype=np.float16, keep_y=False)
     variants = []
     for s in samples.values():
         for e in encs:
-            for k in a.ks:
-                s.X[f"{e}_k{k}"] = ring_mean_features(s.X[e], s.coords, k)
+            for k in a.ks:   # computed on demand per fold (memory): [x, mean of neighbours within k rings]
+                s.X[f"{e}_k{k}"] = (lambda x=s.X[e], c=s.coords, k=k:
+                                    ring_mean_features(x.astype(np.float32), c, k))
     for e in encs:
         variants += [e] + [f"{e}_k{k}" for k in a.ks]
-    gf, sg, _, fi = run_atlas(samples, folds, variants, groups, y_kind=a.y_kind, block=a.block)
+    gf, sg, _, fi = run_atlas_chunked(samples, folds, variants, groups, root, DATASET, genes, chunk=a.chunk,
+                                      y_kind=a.y_kind, block=a.block)
 
     if a.attention_encoder in encs:
         rng = np.random.default_rng(0)
-        gidx = np.arange(len(genes)) if a.attention_genes <= 0 else np.sort(rng.choice(len(genes), a.attention_genes, replace=False))
+        gidx = (np.arange(len(genes)) if a.attention_genes <= 0 or a.attention_genes >= len(genes)
+                else np.sort(rng.choice(len(genes), a.attention_genes, replace=False)))
+        for s, v in samples.items():
+            v.Y = load_y(root, DATASET, s, [genes[i] for i in gidx], v.barcodes)
         gf = pd.concat([gf, attention_cv(samples, folds, a.attention_encoder, groups, a.y_kind, gidx,
                                           max_epochs=a.attention_epochs)])
+        for v in samples.values():
+            v.Y = None
     gname = np.asarray(genes)
     gf["gene"] = gname[gf.gene_idx.values]
     gf.to_csv(out / "gene_fold.csv.gz", index=False)

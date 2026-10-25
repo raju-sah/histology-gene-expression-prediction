@@ -35,7 +35,11 @@ def common_genes(root, dataset, sample_ids, subdir="expression") -> list[str]:
     return sorted(set.intersection(*sets))
 
 
-def load_sparse_samples(root, dataset, encoders, sample_ids, genes, subdir="expression", extra_keys=()):
+def load_sparse_samples(root, dataset, encoders, sample_ids, genes, subdir="expression", extra_keys=(),
+                        x_dtype=np.float32, keep_y=True):
+    """Embeddings + expression on `genes`, rows matched on barcodes. `extra["total"]` is each spot's count total
+    over `genes` (used for library-size normalisation when Y is later loaded in gene chunks). With keep_y=False
+    the expression matrix is dropped after computing the totals (load chunks with `load_y`)."""
     import h5py
     out = {}
     for s in sample_ids:
@@ -48,23 +52,60 @@ def load_sparse_samples(root, dataset, encoders, sample_ids, genes, subdir="expr
             d = dict(zip(ebc, range(len(ebc))))
             if keep_bc is None:
                 keep_bc = np.array([b for b in xbc if b in d])
-            X[e] = emb[[d[b] for b in keep_bc]].astype(np.float32)
+            X[e] = emb[[d[b] for b in keep_bc]].astype(x_dtype)
+        if keep_bc is None:
+            keep_bc = xbc
         rows = np.array([pos[b] for b in keep_bc])
-        extra = {}
+        extra = {"total": np.asarray(M[rows].sum(1)).ravel().astype(np.float64)}
         with h5py.File(f"{root}/{dataset}/{subdir}/{s}.h5") as f:
             for k in extra_keys:
                 if k in f:
                     extra[k] = f[k][:][rows]
-        out[s] = SparseSample(s, X, M[rows], keep_bc, coords[rows], extra)
+        out[s] = SparseSample(s, X, M[rows] if keep_y else None, keep_bc, coords[rows], extra)
+        del M
     return out
 
 
-def transform_y(Y: sp.csr_matrix, kind: str = "log1p") -> sp.csr_matrix:
+def load_y(root, dataset, sample_id, genes, barcodes, subdir="expression") -> sp.csr_matrix:
+    """Expression of `genes` for one sample, rows in the order of `barcodes`."""
+    M, xbc, _, _ = read_expression(f"{root}/{dataset}/{subdir}/{sample_id}.h5", genes)
+    pos = {b: i for i, b in enumerate(xbc)}
+    return sp.csr_matrix(M)[[pos[b] for b in barcodes]]
+
+
+def run_atlas_chunked(samples, folds, encoders, groups, root, dataset, genes, chunk=1000, subdir="expression",
+                      per_chunk=None, **kw):
+    """run_atlas over gene chunks loaded from disk one at a time (bounded memory). Fold PCA is recomputed per
+    chunk; results are identical to a single run_atlas call. `per_chunk(samples, gene_names)` is called after
+    each chunk is loaded (e.g. to compute gene features) and its DataFrames are concatenated."""
+    parts, extra_parts, info = ([], [], []), [], None
+    for c0 in range(0, len(genes), chunk):
+        g = list(genes[c0:c0 + chunk])
+        for s, v in samples.items():   # `dataset` may map sample -> dataset (e.g. Xenium + Visium in Phase 4)
+            v.Y = load_y(root, dataset[s] if isinstance(dataset, dict) else dataset, s, g, v.barcodes, subdir)
+        gf, sg, ag, fi = run_atlas(samples, folds, encoders, groups, **kw)
+        for p, d in zip(parts, (gf, sg, ag)):
+            if len(d):
+                d["gene_idx"] = d["gene_idx"] + c0
+                p.append(d)
+        info = fi if info is None else info
+        if per_chunk is not None:
+            extra_parts.append(per_chunk(samples, g))
+        print(f"  chunk genes {c0 + len(g)}/{len(genes)} done", flush=True)
+    for v in samples.values():
+        v.Y = None
+    cat = lambda x: pd.concat(x, ignore_index=True) if x else pd.DataFrame()
+    out = (cat(parts[0]), cat(parts[1]), cat(parts[2]), info)
+    return out + ((pd.concat(extra_parts),) if per_chunk is not None else ())
+
+
+def transform_y(Y: sp.csr_matrix, kind: str = "log1p", totals: np.ndarray | None = None) -> sp.csr_matrix:
+    """`totals`: per-spot count totals over the full gene set (needed for lognorm when Y is a gene chunk)."""
     Y = Y.astype(np.float32).tocsr(copy=True)
     if kind == "log1p":
         Y.data = np.log1p(Y.data)
     elif kind == "lognorm":   # library-size normalised to the median spot total, then log1p
-        tot = np.asarray(Y.sum(1)).ravel()
+        tot = np.asarray(Y.sum(1)).ravel() if totals is None else np.asarray(totals, dtype=np.float64)
         med = np.median(tot[tot > 0]) if (tot > 0).any() else 1.0
         Y = (sp.diags(med / np.maximum(tot, 1)) @ Y).tocsr()
         Y.data = np.log1p(Y.data)
@@ -79,16 +120,18 @@ class _FoldSVD:
         Z = self.pre.transform(X).astype(np.float64)
         self.zm = Z.mean(0)
         U, self.s, Vt = np.linalg.svd(Z - self.zm, full_matrices=False)
-        self.U, self.V = U, Vt.T
+        del Z
+        self.U, self.V = U.astype(np.float32), Vt.T   # U is the large factor (n x k): float32 halves memory
+        self.Usum = U.sum(0)
 
     def project(self, X):
-        return (self.pre.transform(X).astype(np.float64) - self.zm) @ self.V
+        return ((self.pre.transform(X).astype(np.float64) - self.zm) @ self.V).astype(np.float32)
 
     def uty(self, Yb):
-        """U^T (Y - mean) for a dense or sparse block."""
+        """U^T (Y - mean) for a dense or sparse block (sparse stays sparse: no dense copy of Y)."""
         ym = np.asarray(Yb.mean(0)).ravel()
-        uy = self.U.T @ (Yb.toarray() if sp.issparse(Yb) else Yb)
-        return uy - np.outer(self.U.sum(0), ym), ym
+        uy = (Yb.T @ self.U).T if sp.issparse(Yb) else self.U.T @ Yb
+        return np.asarray(uy, dtype=np.float64) - np.outer(self.Usum, ym), ym
 
 
 def _ridge_pred(B, s, UTy, ym, alpha):
@@ -107,11 +150,14 @@ def run_atlas(samples: dict[str, SparseSample], folds: list[Fold], encoders: lis
     assert_no_leakage(folds, groups)
     ids = list(samples)
     G = samples[ids[0]].Y.shape[1]
-    Ys = {s: transform_y(samples[s].Y, y_kind) for s in ids}
+    Ys = {s: transform_y(samples[s].Y, y_kind, samples[s].extra.get("total")) for s in ids}
     names = list(encoders) + (["features"] if feature_fn else [])
 
     def X_of(s, e):
-        return feature_fn(samples[s]) if e == "features" else samples[s].X[e]
+        if e == "features":
+            return feature_fn(samples[s])
+        x = samples[s].X[e]
+        return x() if callable(x) else x   # callables: features computed on demand (e.g. spatial context)
 
     gf, sg, ag, fi = [], [], [], []
     for fold in folds:

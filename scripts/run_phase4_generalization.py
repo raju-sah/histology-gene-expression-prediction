@@ -21,7 +21,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import common_genes, load_sparse_samples, run_atlas  # noqa: E402
+from hestfm.atlas import common_genes, load_sparse_samples, run_atlas_chunked  # noqa: E402
 from hestfm.evaluate import log_experiment  # noqa: E402
 from hestfm.splits import Fold, assert_no_leakage  # noqa: E402
 
@@ -54,6 +54,7 @@ def main(argv=None):
     ap.add_argument("--settings", nargs="+", default=["xenium_logo", "xenium_same_organ", "visium_same_organ"])
     ap.add_argument("--y-kind", default="lognorm")
     ap.add_argument("--block", type=int, default=1000)
+    ap.add_argument("--chunk", type=int, default=250, help="genes loaded per pass (memory bound)")
     ap.add_argument("--out", default=str(ROOT / "reports" / "phase4"))
     ap.add_argument("--no-log", action="store_true")
     a = ap.parse_args(argv)
@@ -71,20 +72,23 @@ def main(argv=None):
 
     genes = sorted(set(common_genes(root, XEN, list(xg))) & (set(common_genes(root, VIS, list(vo))) if vo else set()))
     print(len(genes), "shared genes")
-    samples = load_sparse_samples(root, XEN, encs, list(xg), genes)
+    lean = dict(x_dtype=np.float16, keep_y=False)   # expression is loaded per gene chunk (memory)
+    samples = load_sparse_samples(root, XEN, encs, list(xg), genes, **lean)
     if vo:
-        samples.update(load_sparse_samples(root, VIS, encs, list(vo), genes))
+        samples.update(load_sparse_samples(root, VIS, encs, list(vo), genes, **lean))
+    ds = {s: XEN for s in xg} | {s: VIS for s in vo}
     groups = dict(xg) | {s: f"visium_{s}" for s in vo}
     folds = build_folds(xg, xo, vo, a.settings)
     assert_no_leakage(folds, groups)
 
-    rows = []
     for f in folds:
         print(f"== {f.name}: train {len(f.train)} samples -> test {f.test}")
-        gf, sg, _, fi = run_atlas(samples, [f], encs, groups, y_kind=a.y_kind, block=a.block, verbose=False)
-        sg["setting"], sg["organ"], sg["n_train_samples"] = f.meta["setting"], f.meta["organ"], len(f.train)
-        rows.append(sg)
-    sg = pd.concat(rows, ignore_index=True)
+    _, sg, _, _ = run_atlas_chunked(samples, folds, encs, groups, root, ds, genes, chunk=a.chunk,
+                                    y_kind=a.y_kind, block=a.block, verbose=False)
+    meta = {f.name: f for f in folds}
+    sg["setting"] = sg.fold.map(lambda n: meta[n].meta["setting"])
+    sg["organ"] = sg.fold.map(lambda n: meta[n].meta["organ"])
+    sg["n_train_samples"] = sg.fold.map(lambda n: len(meta[n].train))
     sg["gene"] = np.asarray(genes)[sg.gene_idx.values]
     sg.to_csv(out / "sample_gene.csv.gz", index=False)
 

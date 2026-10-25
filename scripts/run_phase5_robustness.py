@@ -20,7 +20,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import common_genes, load_sparse_samples, run_atlas  # noqa: E402
+from hestfm.atlas import common_genes, load_sparse_samples, run_atlas_chunked  # noqa: E402
 from hestfm.data import SampleData  # noqa: E402
 from hestfm.evaluate import log_experiment, run_cv  # noqa: E402
 from hestfm.heads import MLPHead, RidgeCVHead  # noqa: E402
@@ -29,6 +29,7 @@ from hestfm.splits import leave_one_group_out  # noqa: E402
 
 DATASET = "phase2/xenium5k"
 WINDOWS = {"expression_w050": 56, "expression": 112, "expression_w200": 224}
+LEAN = dict(x_dtype=np.float16, keep_y=False)   # expression loaded per gene chunk (memory)
 
 
 def _device():
@@ -55,6 +56,8 @@ def main(argv=None):
     ap.add_argument("--mlp-encoder", default="uni2_h")
     ap.add_argument("--y-kind", default="log1p")
     ap.add_argument("--block", type=int, default=1000)
+    ap.add_argument("--chunk", type=int, default=250, help="genes loaded per pass (memory bound)")
+    ap.add_argument("--seed-genes", type=int, default=1000, help="fixed random gene subset for the seed analysis; 0 = all")
     ap.add_argument("--out", default=str(ROOT / "reports" / "phase5"))
     ap.add_argument("--skip", nargs="*", default=[], choices=["seeds", "window", "fov", "mlp"])
     ap.add_argument("--no-log", action="store_true")
@@ -72,13 +75,17 @@ def main(argv=None):
     results = {}
 
     if "seeds" not in a.skip:
-        samples = load_sparse_samples(root, DATASET, encs, ids, genes)
+        rng = np.random.default_rng(0)
+        gseed = genes if a.seed_genes <= 0 or a.seed_genes >= len(genes) else \
+            sorted(rng.choice(genes, size=a.seed_genes, replace=False))   # fixed subset: CPU budget
+        samples = load_sparse_samples(root, DATASET, encs, ids, genes, **LEAN)
         rows = []
         for seed in a.seeds:
-            gf, sg, _, _ = run_atlas(samples, folds, encs, groups, y_kind=a.y_kind, block=a.block, seed=seed, verbose=False)
+            gf, sg, _, _ = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, gseed, chunk=a.chunk,
+                                             y_kind=a.y_kind, block=a.block, seed=seed, verbose=False)
             for e in encs:
                 m, lo, hi = score(gf, sg, e)
-                rows.append({"encoder": e, "seed": seed, "pearson_mean": m, "ci_lo": lo, "ci_hi": hi})
+                rows.append({"encoder": e, "seed": seed, "pearson_mean": m, "ci_lo": lo, "ci_hi": hi, "n_genes": len(gseed)})
                 log(e, "xenium5k_atlas", "logo_5groups", f"ridge_seed{seed}", "pearson_mean", m, notes=f"y={a.y_kind}")
         df = pd.DataFrame(rows)
         df.to_csv(out / "seeds.csv", index=False)
@@ -95,8 +102,9 @@ def main(argv=None):
             for w, um in have.items():
                 g_w = common_genes(root, DATASET, ids, subdir=w)
                 g_w = sorted(set(g_w) & set(genes))
-                samples = load_sparse_samples(root, DATASET, encs[:1], ids, g_w, subdir=w)
-                gf, sg, _, _ = run_atlas(samples, folds, encs[:1], groups, y_kind=a.y_kind, block=a.block, verbose=False)
+                samples = load_sparse_samples(root, DATASET, encs[:1], ids, g_w, subdir=w, **LEAN)
+                gf, sg, _, _ = run_atlas_chunked(samples, folds, encs[:1], groups, root, DATASET, g_w, chunk=a.chunk,
+                                                 subdir=w, y_kind=a.y_kind, block=a.block, verbose=False)
                 m, lo, hi = score(gf, sg, encs[0])
                 rows.append({"encoder": encs[0], "window_um": um, "pearson_mean": m, "ci_lo": lo, "ci_hi": hi,
                              "n_genes": len(g_w)})
@@ -109,9 +117,9 @@ def main(argv=None):
 
     if "fov" not in a.skip:
         if all((root / DATASET / "uni2_h_c56" / f"{s}.h5").exists() for s in ids) and "uni2_h" in encs:
-            samples = load_sparse_samples(root, DATASET, ["uni2_h", "uni2_h_c56"], ids, genes)
-            gf, sg, _, _ = run_atlas(samples, folds, ["uni2_h", "uni2_h_c56"], groups, y_kind=a.y_kind, block=a.block,
-                                     verbose=False)
+            samples = load_sparse_samples(root, DATASET, ["uni2_h", "uni2_h_c56"], ids, genes, **LEAN)
+            gf, sg, _, _ = run_atlas_chunked(samples, folds, ["uni2_h", "uni2_h_c56"], groups, root, DATASET, genes,
+                                             chunk=a.chunk, y_kind=a.y_kind, block=a.block, verbose=False)
             rows = []
             for e, um in (("uni2_h", 112), ("uni2_h_c56", 56)):
                 m, lo, hi = score(gf, sg, e)
@@ -130,8 +138,9 @@ def main(argv=None):
     if "mlp" not in a.skip and a.mlp_encoder in encs:
         rng = np.random.default_rng(0)
         gsub = sorted(rng.choice(genes, size=min(a.mlp_genes, len(genes)), replace=False))
-        sp_samples = load_sparse_samples(root, DATASET, [a.mlp_encoder], ids, gsub)
-        dense = {s: SampleData(s, v.X[a.mlp_encoder], v.Y.toarray(), v.barcodes, v.coords, np.asarray(gsub))
+        sp_samples = load_sparse_samples(root, DATASET, [a.mlp_encoder], ids, gsub, x_dtype=np.float16)
+        dense = {s: SampleData(s, v.X[a.mlp_encoder].astype(np.float32), v.Y.toarray(), v.barcodes, v.coords,
+                               np.asarray(gsub))
                  for s, v in sp_samples.items()}
         rows = []
         heads = {"ridge": lambda seed: RidgeCVHead(pca_dim=256, per_gene_alpha=True, seed=seed),

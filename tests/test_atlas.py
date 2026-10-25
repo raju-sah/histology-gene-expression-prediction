@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import scipy.sparse as sp
 
 from hestfm.atlas import SparseSample, gene_features, grid_spacing, morans_i, run_atlas
@@ -65,3 +66,27 @@ def test_gene_features_shapes():
     df = gene_features(ss, [f"G{i}" for i in range(6)])
     assert list(df.columns) == ["mean_log1p", "var_log1p", "mean_counts", "frac_zero", "morans_i"]
     assert ((df.frac_zero >= 0) & (df.frac_zero <= 1)).all()
+
+
+def test_chunked_matches_single_run(tmp_path):
+    """Gene-chunked atlas (Y loaded from disk per chunk) equals one in-memory run, incl. lognorm totals."""
+    from hestfm.atlas import common_genes, load_sparse_samples, run_atlas_chunked
+    from fake_phase2 import make_fake_phase2
+    samples_ids, genes = make_fake_phase2(tmp_path, encoders=("uni2_h",), n_genes=14)
+    groups = {s: g for s, g in __import__("hestfm").load_config()["xenium5k_samples"].items()}
+    folds = leave_one_group_out(groups)
+    for kind in ("log1p", "lognorm"):
+        full = load_sparse_samples(tmp_path, "phase2/xenium5k", ["uni2_h"], samples_ids, genes)
+        gf1, *_ = run_atlas(full, folds, ["uni2_h"], groups, y_kind=kind, pca_dim=16, verbose=False)
+        lean = load_sparse_samples(tmp_path, "phase2/xenium5k", ["uni2_h"], samples_ids, genes,
+                                   x_dtype=np.float16, keep_y=False)
+        for v in full.values():   # same float16 rounding of X as the lean path
+            v.X["uni2_h"] = v.X["uni2_h"].astype(np.float16)
+        gf1, *_ = run_atlas(full, folds, ["uni2_h"], groups, y_kind=kind, pca_dim=16, verbose=False)
+        gf2, _, _, _, feats = run_atlas_chunked(lean, folds, ["uni2_h"], groups, tmp_path, "phase2/xenium5k", genes,
+                                                chunk=5, y_kind=kind, pca_dim=16, verbose=False,
+                                                per_chunk=lambda s, g: pd.DataFrame({"gene": g}))
+        a = gf1.sort_values(["fold", "gene_idx"]).pearson.values
+        b = gf2.sort_values(["fold", "gene_idx"]).pearson.values
+        assert np.allclose(a, b, atol=1e-5, equal_nan=True), kind
+        assert list(feats.gene) == genes

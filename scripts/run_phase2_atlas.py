@@ -20,7 +20,8 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from hestfm import ROOT, load_config  # noqa: E402
-from hestfm.atlas import common_genes, gene_features, load_sparse_samples, run_atlas  # noqa: E402
+from hestfm.atlas import (common_genes, gene_features, load_sparse_samples, load_y, run_atlas,  # noqa: E402
+                          run_atlas_chunked)
 from hestfm.celltypes import tau  # noqa: E402
 from hestfm.evaluate import log_experiment  # noqa: E402
 from hestfm.metrics import bootstrap_ci  # noqa: E402
@@ -73,6 +74,7 @@ def main(argv=None):
     ap.add_argument("--out", default=str(ROOT / "reports" / "phase2"))
     ap.add_argument("--block", type=int, default=1000)
     ap.add_argument("--null-genes", type=int, default=500)
+    ap.add_argument("--chunk", type=int, default=250, help="genes loaded per pass (memory bound)")
     ap.add_argument("--no-log", action="store_true")
     a = ap.parse_args(argv)
 
@@ -87,33 +89,43 @@ def main(argv=None):
     folds = leave_one_group_out(groups)
     genes = common_genes(root, DATASET, present)
     print(len(genes), "common genes")
-    samples = load_sparse_samples(root, DATASET, encs, present, genes, extra_keys=("n_cells", "composition"))
+    # Memory-lean: embeddings kept as float16, expression read from disk in gene chunks (see run_atlas_chunked).
+    samples = load_sparse_samples(root, DATASET, encs, present, genes, extra_keys=("n_cells", "composition"),
+                                  x_dtype=np.float16, keep_y=False)
 
-    feats = gene_features(samples, genes)
+    feats = None
     cell_df, prof = pooled_celltypes(root, present, genes)
     flags, all_summ = [], []
     for yk in a.y_kind:
         out = Path(a.out) / yk
         out.mkdir(parents=True, exist_ok=True)
-        gf, sg, ag, fi = run_atlas(samples, folds, encs, groups, y_kind=yk, block=a.block)
+        per_chunk = (lambda s, g: gene_features(s, g)) if feats is None else None
+        res = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, genes, chunk=a.chunk,
+                                y_kind=yk, block=a.block, per_chunk=per_chunk)
+        gf, sg, ag, fi = res[:4]
+        if per_chunk is not None:
+            feats = res[4]
         bl = {
             "composition": lambda s: np.log1p(s.extra["composition"].astype(np.float32)),
             "ncells": lambda s: np.log1p(s.extra["n_cells"].astype(np.float32))[:, None],
         }
         for name, fn in bl.items():
-            g2, s2, _, f2 = run_atlas(samples, folds, [], groups, y_kind=yk, block=a.block, feature_fn=fn)
+            g2, s2, _, f2 = run_atlas_chunked(samples, folds, [], groups, root, DATASET, genes, chunk=a.chunk,
+                                              y_kind=yk, block=a.block, feature_fn=fn, verbose=False)
             for d in (g2, s2, f2):
                 d["encoder"] = d["encoder"].replace("features", name)
             gf, sg, fi = pd.concat([gf, g2]), pd.concat([sg, s2]), pd.concat([fi, f2])
         # permutation control: shuffle expression rows within each sample (breaks image<->expression link)
         rng = np.random.default_rng(0)
-        sub = rng.choice(len(genes), size=min(a.null_genes, len(genes)), replace=False)
+        sub = sorted(rng.choice(len(genes), size=min(a.null_genes, len(genes)), replace=False))
         null = {}
         for s, v in samples.items():
-            perm = rng.permutation(v.Y.shape[0])
-            null[s] = type(v)(s, {encs[0]: v.X[encs[0]]}, v.Y[perm][:, sub], v.barcodes, v.coords, {})
+            Y = load_y(root, DATASET, s, [genes[i] for i in sub], v.barcodes)
+            perm = rng.permutation(Y.shape[0])
+            null[s] = type(v)(s, {encs[0]: v.X[encs[0]]}, Y[perm], v.barcodes, v.coords, {"total": v.extra["total"][perm]})
         gn, *_ = run_atlas(null, folds, [encs[0]], groups, y_kind=yk, block=a.block, verbose=False)
         null_r = float(gn.groupby("fold").pearson.mean().mean())
+        del null
 
         gname = np.asarray(genes)
         for d in (gf, sg, ag):
