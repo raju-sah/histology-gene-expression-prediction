@@ -22,3 +22,8 @@ date,commit,encoder,task,split,head,metric,value,n_test,notes
 2026-10-25,0f87d8f,conch_v15,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.4630,72219,"y=log1p;genes=5001;ci95=[0.370,0.532];null=0.003"
 2026-10-25,0f87d8f,composition,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.4971,72219,"y=log1p;genes=5001;ci95=[0.412,0.559];null=0.003"
 2026-10-25,0f87d8f,ncells,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.4247,72219,"y=log1p;genes=5001;ci95=[0.334,0.500];null=0.003"
+2026-10-25,1b03850,uni2_h,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1476,72219,"y=lognorm;genes=5001;ci95=[0.127,0.171];null=0.000"
+2026-10-25,1b03850,virchow2,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1675,72219,"y=lognorm;genes=5001;ci95=[0.138,0.194];null=0.000"
+2026-10-25,1b03850,conch_v15,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1233,72219,"y=lognorm;genes=5001;ci95=[0.106,0.140];null=0.000"
+2026-10-25,1b03850,composition,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1370,72219,"y=lognorm;genes=5001;ci95=[0.096,0.176];null=0.000"
+2026-10-25,1b03850,ncells,xenium5k_atlas,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1582,72219,"y=lognorm;genes=5001;ci95=[0.117,0.192];null=0.000"

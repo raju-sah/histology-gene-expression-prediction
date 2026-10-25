@@ -1,0 +1,17 @@
+{
+  "flags": [],
+  "samples": [
+    "TENX189",
+    "TENX160",
+    "TENX187",
+    "TENX188",
+    "NCBI887",
+    "NCBI888"
+  ],
+  "encoders": [
+    "uni2_h",
+    "virchow2",
+    "conch_v15"
+  ],
+  "n_genes": 5001
+}

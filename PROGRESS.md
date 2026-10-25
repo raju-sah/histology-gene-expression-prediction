@@ -78,3 +78,38 @@ Permuted labels: r = -0.013 / -0.007. Folds sample-disjoint; alpha chosen on tra
 - Patient identity unknown for all 5k samples (groups are a proxy). Only 5 test groups -> wide CIs.
 - `transformers==4.46.3` pin for TITAN in Colab; if `return_conch` fails, conch_v15 is skipped and recorded in run_summary.json.
 - Colab compute-unit estimates are approximate (L4 rate assumed ~5 CU/h).
+
+## Phase 2: Xenium 5k predictability atlas (done 2026-10-26, tag `phase-2`)
+**Data run** (Colab CLI, L4): first attempt lost its VM after a dropped connection (3 samples kept only on VM disk were lost,
+~2.5 CU). Fixes: transcripts downloaded to VM disk instead of remote row-group reads (~3 MB/s -> ~250 MB/s; 24 -> ~1 min per
+sample); `scripts/colab_driver.py` runs one sample per exec and downloads it immediately, retrying dropped/hung execs.
+All 6 Xenium 5k samples downloaded (2.3 GB). HEST cross-check per sample: total-count r 0.994-0.998, median per-gene r
+0.86-0.96; orientation 99.8-99.96 % of cells inside patch footprints. H-optimus-1 still gated (skipped).
+Visium (Phase 4): only 5/13 downloaded (TENX62, TENX72, MISC13-15, all lung) before the Colab balance reached **0 CU**
+(an unrelated A100 session `ntl14c`/`ntlolmo` on the account burned ~5 CU/h). Ovary/cervix Visium missing.
+
+**Local analysis under memory limits** (machine has ~1-3 GB free): gene-chunked atlas (250 genes per pass), float16
+embeddings, exact streaming PCA (chunked covariance), fold fits cached on disk (`data/tmp_fitcache/shared`) and reused
+across chunks/targets/phases; 3.8 GB RSS watchdog. Peak RSS 2.7-2.9 GB. Equivalence to in-memory runs is unit-tested.
+
+**Key numbers** (5001 genes, LOGO over 5 groups, per-gene-alpha ridge on PCA-256; 95% CI over held-out samples)
+| target | Virchow2 | UNI2-h | CONCH v1.5 | composition oracle | cell count only | permuted |
+|---|---|---|---|---|---|---|
+| log1p | 0.510 [0.42,0.58] | 0.474 | 0.463 | 0.497 | 0.425 | 0.003 |
+| lognorm | 0.167 [0.14,0.19] | 0.148 | 0.123 | 0.137 | 0.158 | 0.000 |
+
+**Findings**
+- Raw-count predictability (r~0.5) is dominated by cellularity: cell count alone gives 0.425. After library-size
+  normalisation, image models reach only 0.12-0.17 mean / 0.10-0.15 median per-gene r, i.e. no better than cell count.
+  Not leakage: permutation control ~0, folds group-disjoint (checked in code at sample, group and row level).
+- log1p: r tracks expression level (rho 0.88) and Moran's I (rho 0.93; partial 0.60 given expression); image vs
+  composition-oracle per-gene r rho 0.98. Genes the image predicts above the oracle: CTHRC1, THY1, SULF1, ADAM12 (activated
+  fibroblast / CAF markers), suggesting morphology captures cell states the coarse typing cannot.
+- lognorm: cell-type specificity (tau; partial rho 0.38, largest unique OLS delta R^2 0.06) and cross-encoder agreement
+  (partial rho 0.68) explain which genes are predictable; OLS R^2 0.65.
+- Encoder ranking consistent across targets: Virchow2 > UNI2-h > CONCH v1.5.
+
+**Open issues / limitations**
+- Coarse marker typing leaves 60-70 % of cells "unassigned" (sparse marker counts on the 5k panel); weakens tau and the
+  composition oracle (which scores below cell count under lognorm). Fix needs cell-level matrices -> another Colab pass.
+- Only 5 test groups; CIs are wide.
