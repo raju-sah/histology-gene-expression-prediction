@@ -253,7 +253,10 @@ def phase2():
             if os.path.exists(p):
                 with h5py.File(p) as f:
                     genes_5k |= set(f['genes'][:].astype(str))
+        if os.path.exists('/content/genes_5k.txt'):   # uploaded by scripts/colab_driver.py when the VM is fresh
+            genes_5k |= set(open('/content/genes_5k.txt').read().split())
         print(len(genes_5k), 'Xenium 5k genes (union)')
+        assert genes_5k or not VISIUM, 'no Xenium 5k gene list available for the Visium section'
         vis_encoders = [e for e in encoders if e.name in VISIUM_ENCODERS]
         for sid in VISIUM:
             qc = load_qc(sid, OUT_VIS)
