@@ -25,7 +25,7 @@
 - Patient identity of 5k samples is unknown (see decisions).
 - TENX160 transcripts parquet is 104 GB: stream remotely, never download whole.
 
-## Phase 1: Reproduce the benchmark (code done 2026-10-25; **STOP: waiting for the Colab run**)
+## Phase 1: Reproduce the benchmark (done 2026-10-25, tag `phase-1`)
 **Done**
 - `hestfm.heads`: `HESTRidge` (exact HEST probe, verified equal to the sklearn reference in tests), `RidgeCVHead`
   (intercept, alpha by inner validation, global or per-gene), `MLPHead` (early stopping on inner validation, refit).
@@ -35,7 +35,23 @@
 - Local smoke test executes the notebook's cells on fake bench files with dummy encoders (download/delete, resume, sanity cell, local loader).
 - `scripts/run_phase1_eval.py`: hest_ridge / ridge_cv / mlp, compares with published numbers, flags |diff| > 0.03 and "too good" > +0.05.
 
-**Next (when outputs are in `data/embeddings/phase1/`)**: `scripts/run_local_pipeline.sh` (or just `run_phase1_eval.py`), compare, tag `phase-1`.
+**Run**: Colab CLI (`colab` v0.7.4, account with Colab Pro), session `hestfm-p1` on L4, ~25 min, ~1 CU (L4 ~1.5 CU/h).
+Drive/Secrets are not usable from the CLI: outputs went to VM disk and were downloaded (`colab download`, 296 MB, 30 h5 files);
+the user uploaded their HF token file to the VM themselves (`HF_TOKEN_PATH=/content/.hf_token`). VM stopped afterwards.
+58,393 patches embedded at ~79 patch/s (ResNet50 + UNI2-h together); every patch matched to expression.
+
+**Key numbers** (`reports/phase1/benchmark_table.md`, exact HEST protocol `hest_ridge`; published in brackets)
+- IDC: ResNet50 0.4739 (0.4739), UNI2-h 0.5899 (0.5898)
+- LUNG: ResNet50 0.4953 (0.4949), UNI2-h 0.5593 (0.5587)
+- COAD: ResNet50 0.2503 (0.2500), UNI2-h 0.3026 (0.3015)   -> max |diff| 0.0011: reproduction confirmed.
+- CV-tuned ridge (`ridge_cv`) is better: IDC 0.4769/0.5975, LUNG 0.5380/0.5922, COAD 0.3086/0.3437. MLP ~= HEST ridge.
+
+**Leakage investigation** (triggered by the "too good" flag on COAD ridge_cv, +0.059 over published):
+the HEST probe with only alpha changed from 0.0078 to 1e4 gives 0.3099 (ResNet50) / 0.3366 (UNI2-h), i.e. the gain is
+regularisation (HEST's fixed alpha = 100/(256*50) is effectively unregularised; our validation picks 1e4-3e4).
+Permuted labels: r = -0.013 / -0.007. Folds sample-disjoint; alpha chosen on training rows only. Conclusion: no leakage.
+
+**Decision**: use CV-tuned ridge (per-gene alpha in the atlas) as the main head; report the HEST probe for comparability.
 
 ## Phases 2-5: built ahead (code + tests on synthetic data only; NO real results yet)
 - Phase 2 notebook `notebooks/colab_phase2_xenium5k.ipynb`: UNI2-h, Virchow2, CONCH v1.5, H-optimus-1 (auto-skipped while access is pending),
