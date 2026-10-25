@@ -31,6 +31,14 @@ DATASET = "phase2/xenium5k"
 WINDOWS = {"expression_w050": 56, "expression": 112, "expression_w200": 224}
 
 
+def _device():
+    import torch
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+DEVICE = _device()
+
+
 def score(gf, sg, enc):
     per_fold = gf[gf.encoder == enc].groupby("fold").pearson.mean()
     m = sg[sg.encoder == enc].pivot_table(index="sample", columns="gene_idx", values="pearson")
@@ -127,7 +135,7 @@ def main(argv=None):
                  for s, v in sp_samples.items()}
         rows = []
         heads = {"ridge": lambda seed: RidgeCVHead(pca_dim=256, per_gene_alpha=True, seed=seed),
-                 "mlp": lambda seed: MLPHead(hidden=512, pca_dim=256, seed=seed, max_epochs=60, patience=8)}
+                 "mlp": lambda seed: MLPHead(hidden=512, pca_dim=256, seed=seed, max_epochs=60, patience=8, device=DEVICE)}
         for name, mk in heads.items():
             for seed in (a.seeds if name == "mlp" else a.seeds[:1]):
                 res = run_cv(dense, folds, lambda: mk(seed), groups=groups, seed=seed)

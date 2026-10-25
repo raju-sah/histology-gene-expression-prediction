@@ -30,6 +30,14 @@ from hestfm.splits import assert_no_leakage, inner_validation_mask, leave_one_gr
 DATASET = "phase2/xenium5k"
 
 
+def _device():
+    import torch
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+DEVICE = _device()
+
+
 def attention_cv(samples, folds, enc, groups, y_kind, genes_idx, k=1, seed=0, max_epochs=60):
     assert_no_leakage(folds, groups)
     rows = []
@@ -40,7 +48,7 @@ def attention_cv(samples, folds, enc, groups, y_kind, genes_idx, k=1, seed=0, ma
         X = np.concatenate([samples[s].X[enc] for s in tr])
         sid = np.concatenate([[s] * len(samples[s].X[enc]) for s in tr])
         val = inner_validation_mask(sid, np.concatenate([coords[s] for s in tr]), seed=seed, groups=groups)
-        h = AttentionContextHead(k=k, seed=seed, max_epochs=max_epochs).fit(X, coords, sid, sp.vstack([Ys[s] for s in tr]), val)
+        h = AttentionContextHead(k=k, seed=seed, max_epochs=max_epochs, device=DEVICE).fit(X, coords, sid, sp.vstack([Ys[s] for s in tr]), val)
         Xte = np.concatenate([samples[s].X[enc] for s in te])
         sid_te = np.concatenate([[s] * len(samples[s].X[enc]) for s in te])
         P = h.predict(Xte, coords, sid_te)

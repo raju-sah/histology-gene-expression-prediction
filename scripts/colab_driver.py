@@ -27,7 +27,10 @@ NOISE = ("new version", "colab update", "enable_update_check")
 
 
 def colab(*args, stdin=None, timeout=None) -> tuple[int, str]:
-    p = subprocess.run(["colab", *args], input=stdin, capture_output=True, text=True, timeout=timeout)
+    try:
+        p = subprocess.run(["colab", *args], input=stdin, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:   # a hung client is handled like a dropped connection
+        return 124, "Connection was lost (client timeout)"
     out = "\n".join(l for l in (p.stdout + p.stderr).splitlines() if not any(n in l for n in NOISE))
     return p.returncode, out
 
@@ -73,9 +76,16 @@ def fetch(session, dataset, sid, subdirs, tmp: Path):
     if "TARRED" not in out:
         raise RuntimeError(f"tar failed for {sid}: {out[-500:]}")
     local = tmp / f"{sid}.tar"
-    rc, out = colab("download", "-s", session, f"/content/{sid}.tar", str(local), timeout=3600)
-    if rc != 0 or not local.exists():
-        raise RuntimeError(f"download failed for {sid}: {out[-500:]}")
+    for attempt in range(6):   # the Colab contents proxy returns transient 503s
+        local.unlink(missing_ok=True)
+        rc, out = colab("download", "-s", session, f"/content/{sid}.tar", str(local), timeout=3600)
+        if rc == 0 and local.exists() and "failed" not in out.lower():
+            break
+        print(f"[{sid}] download attempt {attempt + 1} failed: {out.strip().splitlines()[-1][:120] if out.strip() else rc}",
+              flush=True)
+        time.sleep(30 * (attempt + 1))
+    else:
+        raise RuntimeError(f"download failed for {sid} after retries")
     with tarfile.open(local) as t:
         for m in t.getmembers():   # only plain files under the expected dataset folder
             if not m.isfile() or not m.name.startswith(dataset + "/") or ".." in m.name:
@@ -85,12 +95,12 @@ def fetch(session, dataset, sid, subdirs, tmp: Path):
     py(session, f"import os; os.remove('/content/{sid}.tar')")
 
 
-def run_one(session, template, samples, visium, tmp, label, retries=3):
+def run_one(session, template, samples, visium, tmp, label, retries=4, exec_timeout=45 * 60):
     script = tmp / f"run_{label}.py"
     script.write_text(make_script(template, samples, visium))
     for attempt in range(retries):
         t0 = time.time()
-        rc, out = colab("exec", "-s", session, "-f", str(script), timeout=4 * 3600)
+        rc, out = colab("exec", "-s", session, "-f", str(script), timeout=exec_timeout)
         tail = "\n".join(l for l in out.splitlines() if re.search(r"==|embedded|pseudo-spots|cross-check|ok|Error|lost", l))
         print(f"[{label}] exec rc={rc} after {(time.time() - t0) / 60:.1f} min\n{tail[-1500:]}", flush=True)
         if "Connection was lost" in out or rc != 0:
