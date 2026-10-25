@@ -18,7 +18,7 @@ def phase2():
 
         **Runtime:** GPU **L4, High-RAM ON** (TENX160 has ~1-2 B transcripts; the cell x gene matrix needs ~10-20 GB RAM).
         A100 also works (faster GPU part, but the transcript streaming is CPU/network-bound, so L4 is the better value).
-        Expected ~3-4.5 h on L4 (~15-22 compute units). Every step is resumable: if the runtime disconnects, just
+        Expected ~2-3 h on L4 (~4-6 compute units at ~1.5 CU/h). Every step is resumable: if the runtime disconnects, just
         re-run all cells and finished work is skipped.
 
         **Secrets:** `HF_TOKEN` in Colab Secrets (never printed or saved).
@@ -27,7 +27,7 @@ def phase2():
         1. download HEST `patches/<id>.h5` (224 px at 0.5 um/px, 112 um footprint), embed with UNI2-h, Virchow2, CONCH v1.5,
            H-optimus-1 (only if access works; otherwise skipped and recorded) and UNI2-h on the central 56 um
            (`uni2_h_c56`, patch-size sensitivity); delete the patch file;
-        2. stream `transcripts/<id>_transcripts.parquet` from HuggingFace row group by row group (never stored on disk),
+        2. download `transcripts/<id>_transcripts.parquet` to the VM disk (deleted right after), read it row group by row group,
            build the cell x gene matrix (qv >= 20, real genes, assigned cells), cell centroids in H&E pixels, coarse
            marker-based cell types, and pseudo-spot counts = sum of cells whose centroid lies in the patch footprint
            (window scale 1.0) plus 0.5x and 2x windows for Phase 5;
@@ -137,27 +137,26 @@ def phase2():
                 bc = f['barcodes'][:].astype(str); coords = f['coords'][:]
             return bc, coords, qc['patch_size_src']
 
-        def stream_cells(sid, retries=5):
-            fs = HfFileSystem()
-            path = f'datasets/{HEST}/transcripts/{sid}_transcripts.parquet'
-            pf = pq.ParquetFile(fs.open(path, block_size=32 * 2**20))
-            n_rg = pf.metadata.num_row_groups
-            agg = TranscriptAggregator(min_qv=MIN_QV)
+        def stream_cells(sid):
+            # Download the whole transcript parquet to VM disk (much faster than remote row-group reads),
+            # aggregate it row group by row group, then delete it before the next sample.
             t0 = time.time()
-            for i in range(n_rg):
-                for attempt in range(retries):
-                    try:
-                        agg.add(pf.read_row_group(i, columns=COLUMNS)); break
-                    except Exception as ex:
-                        if attempt == retries - 1:
-                            raise
-                        print(f'    retry row group {i}: {type(ex).__name__}'); time.sleep(5 * (attempt + 1))
-                        pf = pq.ParquetFile(HfFileSystem().open(path, block_size=32 * 2**20))
-                if i % 50 == 0 or i == n_rg - 1:
-                    el = time.time() - t0
-                    print(f'    row group {i + 1}/{n_rg}  kept {agg.n_kept / 1e6:.1f}M / seen {agg.n_seen / 1e6:.1f}M '
-                          f'transcripts, {len(agg.cell_index)} cells, {el / 60:.1f} min (eta {el / (i + 1) * (n_rg - i - 1) / 60:.0f} min)')
-            return agg.finalize(), agg
+            local = hest_file(f'transcripts/{sid}_transcripts.parquet')
+            print(f'    downloaded transcripts ({os.path.getsize(local) / 1e9:.1f} GB) in {(time.time() - t0) / 60:.1f} min')
+            try:
+                pf = pq.ParquetFile(local)
+                n_rg = pf.metadata.num_row_groups
+                agg = TranscriptAggregator(min_qv=MIN_QV)
+                t1 = time.time()
+                for i in range(n_rg):
+                    agg.add(pf.read_row_group(i, columns=COLUMNS))
+                    if i % 50 == 0 or i == n_rg - 1:
+                        el = time.time() - t1
+                        print(f'    row group {i + 1}/{n_rg}  kept {agg.n_kept / 1e6:.1f}M / seen {agg.n_seen / 1e6:.1f}M '
+                              f'transcripts, {len(agg.cell_index)} cells, {el / 60:.1f} min (eta {el / (i + 1) * (n_rg - i - 1) / 60:.0f} min)')
+                return agg.finalize(), agg
+            finally:
+                os.remove(local)
 
         def pseudospots_sample(sid, qc):
             outs = {k: f'{OUT}/{k}/{sid}.h5' for k in WINDOWS}

@@ -141,6 +141,7 @@ def test_phase2_notebook_end_to_end(tmp_path):
     Xv, bv, _, gv = read_expression(vis / "expression/V1.h5")
     assert set(gv) == {"EPCAM", "G1", "CD3E"} and Xv.shape == (40, 3)
     assert not (scratch / "patches/X1.h5").exists() and not (scratch / "st/X1.h5ad").exists()
+    assert not (scratch / "transcripts/X1_transcripts.parquet").exists()
     # resumable: a second run does nothing and raises nothing
     before = {p: p.stat().st_mtime for p in out.rglob("*.h5")}
     run_notebook(NB, over, init={"os": os, "sys": sys}, replace=rep)
