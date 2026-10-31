@@ -1,0 +1,7 @@
+setting,encoder,mean_r,mean_drop_vs_logo,n_test_samples
+visium_same_organ,uni2_h,0.1165980321973626,-0.02587920314644401,3
+visium_same_organ,virchow2,0.13201899484057567,-0.020810458577869718,3
+xenium_logo,uni2_h,0.14779693146277242,0.0,6
+xenium_logo,virchow2,0.16416305427998648,0.0,6
+xenium_same_organ,uni2_h,0.17261867947146825,0.0186122415156774,5
+xenium_same_organ,virchow2,0.2050228411609659,0.033926637189184025,5

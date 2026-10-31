@@ -35,3 +35,9 @@ date,commit,encoder,task,split,head,metric,value,n_test,notes
 2026-10-31,203ecde,virchow2_attn_k1,xenium5k_context,logo_5groups,attention_k1,pearson_mean,0.1707,,y=lognorm;genes=5001
 2026-10-31,203ecde,virchow2_k1,xenium5k_context,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1776,,y=lognorm;genes=5001
 2026-10-31,203ecde,virchow2_k2,xenium5k_context,logo_5groups,ridge_pergene_alpha_pca256,pearson_mean,0.1836,,y=lognorm;genes=5001
+2026-10-31,e238dd2,uni2_h,xenium5k_generalization,visium_same_organ,ridge_pergene_alpha_pca256,mean_per_sample_r,0.1166,3,y=lognorm;genes=4634;drop_vs_logo=-0.0259
+2026-10-31,e238dd2,virchow2,xenium5k_generalization,visium_same_organ,ridge_pergene_alpha_pca256,mean_per_sample_r,0.1320,3,y=lognorm;genes=4634;drop_vs_logo=-0.0208
+2026-10-31,e238dd2,uni2_h,xenium5k_generalization,xenium_logo,ridge_pergene_alpha_pca256,mean_per_sample_r,0.1478,6,y=lognorm;genes=4634;drop_vs_logo=0.0000
+2026-10-31,e238dd2,virchow2,xenium5k_generalization,xenium_logo,ridge_pergene_alpha_pca256,mean_per_sample_r,0.1642,6,y=lognorm;genes=4634;drop_vs_logo=0.0000
+2026-10-31,e238dd2,uni2_h,xenium5k_generalization,xenium_same_organ,ridge_pergene_alpha_pca256,mean_per_sample_r,0.1726,5,y=lognorm;genes=4634;drop_vs_logo=0.0186
+2026-10-31,e238dd2,virchow2,xenium5k_generalization,xenium_same_organ,ridge_pergene_alpha_pca256,mean_per_sample_r,0.2050,5,y=lognorm;genes=4634;drop_vs_logo=0.0339

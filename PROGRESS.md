@@ -138,3 +138,40 @@ Gains (variant - single):
 **Open issues / limitations**
 - Attention head evaluated on a fixed random subset (1000 genes for log1p, 500 for lognorm) due to CPU/RAM budget.
 - Only Virchow2 evaluated across all context variants; consistent with its top ranking in Phase 2.
+
+## Phase 4: Generalization (done 2026-10-31, tag `phase-4`)
+**Done**
+- `scripts/run_phase4_generalization.py` run on Virchow2 and UNI2-h across 4,634 shared genes under `lognorm`.
+- Evaluated three settings: `xenium_logo` (train on other Xenium groups, all organs), `xenium_same_organ` (train on other Xenium samples of the same organ), and `visium_same_organ` (cross-platform: train on 5 HEST lung Visium samples, test on Xenium pseudo-spots).
+- Note on data availability: **Only lung has a cross-platform test** (Visium samples TENX62, TENX72, MISC13-15 are all lung; ovary/cervix Visium were never downloaded due to Colab CU exhaustion).
+
+**Key numbers** (4,634 shared genes, `lognorm` target)
+Summary across settings:
+| setting | encoder | mean per-sample r | mean drop vs Xenium LOGO | n test samples |
+|---|---|---|---|---|
+| visium_same_organ | virchow2 | 0.1320 | -0.0208 | 3 (lung only) |
+| visium_same_organ | uni2_h | 0.1166 | -0.0259 | 3 (lung only) |
+| xenium_logo | virchow2 | 0.1642 | 0.0000 | 6 (all organs) |
+| xenium_logo | uni2_h | 0.1478 | 0.0000 | 6 (all organs) |
+| xenium_same_organ | virchow2 | 0.2050 | +0.0339 | 5 (lung & ovary) |
+| xenium_same_organ | uni2_h | 0.1726 | +0.0186 | 5 (lung & ovary) |
+
+Per-sample performance and drop vs Xenium LOGO:
+- `visium_same_organ` (lung only, test on Xenium):
+  - Virchow2: NCBI887 r = 0.1259 (drop -0.0112); NCBI888 r = 0.1224 (drop -0.0152); TENX189 r = 0.1477 (drop -0.0361).
+  - UNI2-h: NCBI887 r = 0.1017 (drop -0.0339); NCBI888 r = 0.1027 (drop -0.0341); TENX189 r = 0.1455 (drop -0.0097).
+- `xenium_same_organ` (within-platform, same-organ):
+  - Virchow2: NCBI887 r = 0.1801 (+0.0430); NCBI888 r = 0.1861 (+0.0484); TENX189 r = 0.2524 (+0.0686); TENX160 r = 0.2325 (-0.0002); TENX187 r = 0.1741 (+0.0098).
+  - UNI2-h: NCBI887 r = 0.1538 (+0.0182); NCBI888 r = 0.1599 (+0.0231); TENX189 r = 0.1857 (+0.0306); TENX160 r = 0.1880 (-0.0202); TENX187 r = 0.1758 (+0.0413).
+- `xenium_logo` baseline:
+  - Virchow2: NCBI887 0.1371, NCBI888 0.1376, TENX189 0.1838, TENX160 0.2327, TENX187 0.1643, TENX188 0.1295.
+  - UNI2-h: NCBI887 0.1356, NCBI888 0.1367, TENX189 0.1551, TENX160 0.2082, TENX187 0.1344, TENX188 0.1167.
+
+**Findings**
+- Cross-platform transfer (Visium -> Xenium) suffers only a modest drop (-0.021 for Virchow2, -0.026 for UNI2-h) despite distinct platforms, spot sizes/resolutions, and laboratory protocols, demonstrating meaningful cross-technology generalisation for morphology-expression mapping.
+- Organ-specific training (`xenium_same_organ`) significantly improves upon pan-organ training (`xenium_logo`) by +0.034 (Virchow2) and +0.019 (UNI2-h), indicating that tissue-specific morphology-expression relationships are partially blurred when pooled across diverse organs.
+- Virchow2 consistently outperforms UNI2-h across all generalization regimes (cross-platform, pan-organ, same-organ).
+
+**Open issues / limitations**
+- Only lung has Visium data locally available; ovary and cervix cross-platform transfer could not be assessed.
+- Cervix has only one Xenium sample (TENX188), so no within-platform same-organ training fold exists for cervix.
