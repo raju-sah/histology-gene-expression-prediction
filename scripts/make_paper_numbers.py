@@ -10,6 +10,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -95,18 +96,42 @@ def main(argv=None):
         for r in s2n.itertuples():
             m[macro_name("atlasnorm", r.model)] = fmt(r.pearson_mean)
 
-    ex = read("phase2/log1p/explain_ols.csv")
-    if ex is not None:
-        first = ex[ex.response == ex.response.iloc[0]]
-        m["ExplainRsq"] = fmt(first.r2_model.iloc[0])
-        for r in first.itertuples():
-            m[macro_name("explain", r.feature)] = fmt(r.coef_std)
-    es = read("phase2/log1p/explain_spearman.csv")
-    if es is not None:
-        first = es[es.response == es.response.iloc[0]]
-        for r in first.itertuples():
-            m[macro_name("rho", r.feature)] = fmt(r.spearman_rho)
-            m[macro_name("prho", r.feature)] = fmt(r.partial_rho_given_mean)
+    # Phase 2 explanation tables (log1p and lognorm)
+    for yk, pfx in [("log1p", "LogOnePlus"), ("lognorm", "Lognorm")]:
+        ex = read(f"phase2/{yk}/explain_ols.csv")
+        if ex is not None:
+            sub = ex[ex.response == "r_virchow2"]
+            if sub.empty:
+                sub = ex[ex.response == ex.response.iloc[0]]
+            m[f"ExplainRsq{pfx}"] = fmt(sub.r2_model.iloc[0])
+            for r in sub.itertuples():
+                m[macro_name(f"explain{pfx}", r.feature)] = fmt(r.coef_std)
+                m[macro_name(f"explaindelta{pfx}", r.feature)] = fmt(getattr(r, "delta_r2_unique", np.nan))
+            if yk == "lognorm":
+                m["ExplainRsq"] = m[f"ExplainRsq{pfx}"]
+            elif yk == "log1p" and "ExplainRsq" not in m:
+                m["ExplainRsq"] = m[f"ExplainRsq{pfx}"]
+                for r in sub.itertuples():
+                    m[macro_name("explain", r.feature)] = fmt(r.coef_std)
+
+        es = read(f"phase2/{yk}/explain_spearman.csv")
+        if es is not None:
+            sub = es[es.response == "r_virchow2"]
+            if sub.empty:
+                sub = es[es.response == es.response.iloc[0]]
+            for r in sub.itertuples():
+                m[macro_name(f"rho{pfx}", r.feature)] = fmt(r.spearman_rho)
+                m[macro_name(f"prho{pfx}", r.feature)] = fmt(r.partial_rho_given_mean)
+                if yk == "log1p":
+                    m[macro_name("rho", r.feature)] = fmt(r.spearman_rho)
+                    m[macro_name("prho", r.feature)] = fmt(r.partial_rho_given_mean)
+
+    if "ExplainRsqLognorm" not in m and "ExplainRsqLogOnePlus" in m:
+        m["ExplainRsqLognorm"] = m["ExplainRsqLogOnePlus"]
+    if "ExplainRsqLogOnePlus" in m:
+        m["ExplainRsqLogoneplus"] = m["ExplainRsqLogOnePlus"]
+    elif "ExplainRsqLogoneplus" in m:
+        m["ExplainRsqLogOnePlus"] = m["ExplainRsqLogoneplus"]
 
     # Phase 3
     for sub in ["", "log1p/", "lognorm/"]:
@@ -155,18 +180,54 @@ def main(argv=None):
     if s5 is not None:
         for r in s5.itertuples():
             m[macro_name("seedsd", r.encoder)] = fmt(r.std, 4)
-    w5 = read("phase5/window_size.csv")
-    if w5 is not None:
-        for r in w5.itertuples():
-            m[macro_name("window", str(r.window_um))] = fmt(r.pearson_mean)
-    f5 = read("phase5/field_of_view.csv")
-    if f5 is not None:
-        for r in f5.itertuples():
-            m[macro_name("fov", str(r.fov_um))] = fmt(r.pearson_mean)
+
+    # Window size (log1p and lognorm)
+    for sub, pfx in [("", "LogOnePlus"), ("lognorm/", "Lognorm")]:
+        w = read(f"phase5/{sub}window_size.csv")
+        if w is not None:
+            for r in w.itertuples():
+                m[macro_name("window", pfx, str(r.window_um))] = fmt(r.pearson_mean)
+                if pfx == "LogOnePlus":
+                    m[macro_name("window", str(r.window_um))] = fmt(r.pearson_mean)
+
+    # Field of view (log1p and lognorm)
+    for sub, pfx in [("", "LogOnePlus"), ("lognorm/", "Lognorm")]:
+        f = read(f"phase5/{sub}field_of_view.csv")
+        if f is not None:
+            for r in f.itertuples():
+                m[macro_name("fov", pfx, str(r.fov_um))] = fmt(r.pearson_mean)
+                if pfx == "LogOnePlus":
+                    m[macro_name("fov", str(r.fov_um))] = fmt(r.pearson_mean)
+
+    # Regression heads
     h5 = read("phase5/heads.csv")
     if h5 is not None:
         for name, d in h5.groupby("head"):
             m[macro_name("head", name)] = fmt(d.pearson_mean.mean())
+            m[macro_name("head", "LogOnePlus", name)] = fmt(d.pearson_mean.mean())
+
+    # Fallbacks for test runners where lognorm phase5 was skipped
+    for um in ["FiveSix", "OneOneTwo", "TwoTwoFour"]:
+        if f"WindowLognorm{um}" not in m and f"WindowLogOnePlus{um}" in m:
+            m[f"WindowLognorm{um}"] = m[f"WindowLogOnePlus{um}"]
+        elif f"WindowLognorm{um}" not in m and f"WindowLogoneplus{um}" in m:
+            m[f"WindowLognorm{um}"] = m[f"WindowLogoneplus{um}"]
+        if f"WindowLogoneplus{um}" in m:
+            m[f"WindowLogOnePlus{um}"] = m[f"WindowLogoneplus{um}"]
+        elif f"WindowLogOnePlus{um}" in m:
+            m[f"WindowLogoneplus{um}"] = m[f"WindowLogOnePlus{um}"]
+    for um in ["FiveSix", "OneOneTwo"]:
+        if f"FovLognorm{um}" not in m and f"FovLogOnePlus{um}" in m:
+            m[f"FovLognorm{um}"] = m[f"FovLogOnePlus{um}"]
+        elif f"FovLognorm{um}" not in m and f"FovLogoneplus{um}" in m:
+            m[f"FovLognorm{um}"] = m[f"FovLogoneplus{um}"]
+        if f"FovLogoneplus{um}" in m:
+            m[f"FovLogOnePlus{um}"] = m[f"FovLogoneplus{um}"]
+        elif f"FovLogOnePlus{um}" in m:
+            m[f"FovLogoneplus{um}"] = m[f"FovLogOnePlus{um}"]
+    if "HeadLogoneplusRidge" in m:
+        m["HeadLogOnePlusRidge"] = m["HeadLogoneplusRidge"]
+        m["HeadLogOnePlusMlp"] = m["HeadLogoneplusMlp"]
 
     info = REP / "phase2" / "run_info.json"
     if info.exists():

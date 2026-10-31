@@ -18,6 +18,7 @@ def test_all_paper_macros_resolve(tmp_path):
     common = ["--root", str(emb), "--no-log", "--block", "6"]
     run_phase2_atlas.main(common + ["--out", str(rep / "phase2"), "--null-genes", "6"])
     analyze_predictability.main(["--table", str(rep / "phase2/log1p/gene_table.csv")])
+    analyze_predictability.main(["--table", str(rep / "phase2/lognorm/gene_table.csv")])
     plot_phase2.main(["--table", str(rep / "phase2/log1p/gene_table.csv"), "--out", str(rep / "phase2/figures")])
     run_phase3_context.main(common + ["--out", str(rep / "phase3"), "--encoders", "uni2_h", "--attention-epochs", "2",
                                       "--phase2-table", str(rep / "phase2/log1p/gene_table.csv")])
@@ -32,3 +33,13 @@ def test_all_paper_macros_resolve(tmp_path):
     used = set(re.findall(r"\\num\{(\w+)\}", (ROOT / "paper/main.tex").read_text()))
     missing = sorted(u for u in used if u not in m or m[u] == make_paper_numbers.PENDING)
     assert not missing, missing
+
+
+def test_explain_rsq_lognorm_matches_csv(tmp_path):
+    import make_paper_numbers
+    import pandas as pd
+    m = make_paper_numbers.main(["--reports", str(ROOT / "reports"), "--out", str(tmp_path / "gen")])
+    df = pd.read_csv(ROOT / "reports/phase2/lognorm/explain_ols.csv")
+    sub = df[df.response == "r_virchow2"]
+    expected = f"{float(sub.r2_model.iloc[0]):.3f}"
+    assert m["ExplainRsqLognorm"] == expected

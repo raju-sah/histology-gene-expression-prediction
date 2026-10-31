@@ -59,3 +59,8 @@ date,commit,encoder,task,split,head,metric,value,n_test,notes
 2026-10-31,71b0e32,uni2_h,xenium5k_atlas_subset,logo_5groups,mlp_seed0,pearson_mean,0.4833,,genes=1000 random subset
 2026-10-31,71b0e32,uni2_h,xenium5k_atlas_subset,logo_5groups,mlp_seed1,pearson_mean,0.4903,,genes=1000 random subset
 2026-10-31,71b0e32,uni2_h,xenium5k_atlas_subset,logo_5groups,mlp_seed2,pearson_mean,0.4781,,genes=1000 random subset
+2026-10-31,4100d4a,virchow2,xenium5k_atlas,logo_5groups,ridge_window56um,pearson_mean,0.1431,,y=lognorm
+2026-10-31,4100d4a,virchow2,xenium5k_atlas,logo_5groups,ridge_window112um,pearson_mean,0.1675,,y=lognorm
+2026-10-31,4100d4a,virchow2,xenium5k_atlas,logo_5groups,ridge_window224um,pearson_mean,0.1507,,y=lognorm
+2026-10-31,4100d4a,uni2_h,xenium5k_atlas,logo_5groups,ridge_fov112um,pearson_mean,0.1476,,y=lognorm
+2026-10-31,4100d4a,uni2_h_c56,xenium5k_atlas,logo_5groups,ridge_fov56um,pearson_mean,0.1167,,y=lognorm

@@ -29,7 +29,8 @@ Pearson $r$ of \num{AtlasVirchowTwo}, compared to \num{AtlasComposition} for a c
 for cell count alone. Crucially, after library-size normalisation ($\text{lognorm}$), image models reach only
 \num{AtlasnormVirchowTwo} (Virchow2) and \num{AtlasnormUniTwoH} (UNI2-h)---no better than the cell-count baseline
 (\num{AtlasnormNcells}). Thus, apparent predictability in raw counts is dominated by a cellularity confound, while
-residual normalised predictability is explained by cell-type specificity and cross-encoder agreement ($R^2=\num{ExplainRsq}$).
+residual normalised predictability is explained by cell-type specificity and cross-encoder agreement
+($R^2=\num{ExplainRsqLognorm}$, compared to $R^2=\num{ExplainRsqLogOnePlus}$ on raw counts).
 \end{abstract}
 
 \section{Introduction}
@@ -78,10 +79,14 @@ Crucially, under library-size normalisation ($\text{lognorm}$), image models rea
 This demonstrates that raw-count prediction is primarily driven by spot cellularity rather than cell-intrinsic transcription.
 
 \subsection{What explains predictability?}
-Expression level, sparsity, spatial autocorrelation (Moran's $I$), cell-type specificity ($\tau$) and cross-encoder
-agreement jointly explain $R^2=\num{ExplainRsq}$ of the per-gene variation in $r$. Spearman $\rho$ with Moran's
-$I$ is \num{RhoMoransI} (\num{PrhoMoransI} given mean expression). Image models predict activated fibroblast markers
-(CTHRC1, THY1, ADAM12) above the coarse composition oracle, indicating morphological sensitivity to specialised cell states.
+For raw $\log(1+\text{count})$ predictions, spatial autocorrelation (Moran's $I$), sparsity, and expression level
+jointly explain $R^2=\num{ExplainRsqLogOnePlus}$ of per-gene variation in $r$ (Spearman $\rho$ with Moran's $I$ is
+\num{RhoMoransI}, and \num{PrhoMoransI} given mean expression). Crucially, for library-size normalised ($\text{lognorm}$)
+targets, the five features explain $R^2=\num{ExplainRsqLognorm}$ of per-gene variation, with cell-type specificity
+($\tau$; partial Spearman $\rho = 0.378$, unique $\Delta R^2 = 0.060$) and cross-encoder agreement (partial $\rho = 0.676$,
+unique $\Delta R^2 = 0.264$) driving predictability rather than expression level. Image models predict activated
+fibroblast markers (CTHRC1, THY1, ADAM12) above the coarse composition oracle, indicating morphological sensitivity to
+specialised cell states.
 \begin{figure}[t]\centering\fig{phase2/figures/fig_image_vs_composition.png}
 \caption{Image model vs.\ composition oracle per gene.}\label{fig:comp}\end{figure}
 
@@ -101,9 +106,19 @@ Restricting training to same-organ Xenium samples improves performance to $r=\nu
 (gain of \num{DropXeniumSameOrganVirchowTwo} over pan-organ training), demonstrating organ specificity.
 
 \subsection{Robustness}
-Seed s.d.\ of the gene-averaged $r$: \num{SeedsdUniTwoH}. Expression window 56/112/224\,$\mu$m:
-\num{WindowFiveSix}/\num{WindowOneOneTwo}/\num{WindowTwoTwoFour}. Field of view 56 vs 112\,$\mu$m:
-\num{FovFiveSix} vs \num{FovOneOneTwo}. Ridge vs MLP: \num{HeadRidge} vs \num{HeadMlp}.
+Varying the random seed yields identical results across seeds 0, 1, and 2 (s.d.\ $< 10^{-12}$ for Virchow2, UNI2-h,
+and CONCH v1.5); because ridge regression on exact PCA features contains no stochastic components, the pipeline is fully
+deterministic and the seed changes nothing, which does not constitute evidence of algorithmic robustness.
+For pseudo-spot aggregation windows under library-size normalisation ($\text{lognorm}$, Virchow2), 56/112/224\,$\mu$m
+windows achieve $r=\num{WindowLognormFiveSix}$ / $\num{WindowLognormOneOneTwo}$ / $\num{WindowLognormTwoTwoFour}$
+(peaking at the nominal 112\,$\mu$m patch footprint). On raw counts ($\text{log1p}$), larger windows monotonically
+increase $r$ (\num{WindowLogOnePlusFiveSix} / \num{WindowLogOnePlusOneOneTwo} / \num{WindowLogOnePlusTwoTwoFour})
+by pooling more transcripts and dampening Poisson count noise.
+Restricting image field of view from 112 to 56\,$\mu$m (central crop, UNI2-h) drops $r$ from \num{FovLognormOneOneTwo}
+to \num{FovLognormFiveSix} under $\text{lognorm}$ (and from \num{FovLogOnePlusOneOneTwo} to \num{FovLogOnePlusFiveSix}
+under $\text{log1p}$).
+Comparing linear ridge to a 1-hidden-layer MLP on a 1000-gene subset ($\text{log1p}$, UNI2-h) yields
+$r=\num{HeadLogOnePlusRidge}$ vs $\num{HeadLogOnePlusMlp}$.
 
 \section{Limitations}
 Few Xenium 5k samples and no donor identifiers; groups are a conservative proxy. Coarse marker-based cell typing leaves

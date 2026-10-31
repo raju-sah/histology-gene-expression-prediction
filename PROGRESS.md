@@ -207,3 +207,12 @@ Per-sample performance and drop vs Xenium LOGO:
 
 **Final gate status**
 - Ready for user review. All roadmap phases (0 through 5) complete.
+
+### Post-review fixes (2026-10-31)
+- **R² correction**: Disentangled raw `log1p` ($R^2 = 0.939$) from normalised `lognorm` ($R^2 = 0.649$) OLS models in `scripts/make_paper_numbers.py` and `paper/main.tex`, explicitly filtering by `response == "r_virchow2"`. Generated `ExplainRsqLogOnePlus` and `ExplainRsqLognorm`. Added unit test `test_explain_rsq_lognorm_matches_csv`.
+- **Seed analysis clarification**: Clarified in Section 4.6 that ridge regression on exact StreamPCA features is fully deterministic (s.d. $< 10^{-12}$ across seeds), noting that seed invariance reflects algorithmic determinism rather than empirical robustness.
+- **Phase 5 lognorm evaluation**: Ran window-size and FOV sensitivity on `lognorm` (`reports/phase5/lognorm/`):
+  - Window size (Virchow2, `lognorm`): 56 um -> 0.143 [0.098, 0.182]; 112 um -> 0.167 [0.138, 0.194]; 224 um -> 0.151 [0.128, 0.168] (peaks at the nominal 112 um patch footprint).
+  - Field of view (UNI2-h, `lognorm`): 112 um -> 0.148 [0.127, 0.171] vs central 56 um -> 0.117 [0.098, 0.138].
+  - Labeled all Phase 5 values in `paper/main.tex` with their respective target (`log1p` vs `lognorm`).
+- Recompiled `paper/main.pdf` via Tectonic with zero `\pending` placeholders. All 55 unit tests pass.
