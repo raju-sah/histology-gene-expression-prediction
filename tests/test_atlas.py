@@ -98,7 +98,7 @@ def test_stream_pca_matches_sklearn():
     from hestfm.atlas import StreamPCA
     rng = np.random.default_rng(0)
     X = (rng.normal(size=(3000, 40)) @ rng.normal(size=(40, 40))).astype(np.float16)
-    sp_ = StreamPCA(10, rows=700).fit(X)
+    sp_ = StreamPCA(10, max_elems=700 * 40).fit(X)
     Z1 = sp_.transform(X)
     Xs = StandardScaler().fit_transform(X.astype(np.float64))
     Z2 = PCA(10, svd_solver="full").fit_transform(Xs)

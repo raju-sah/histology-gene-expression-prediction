@@ -133,12 +133,13 @@ class StreamPCA:
     StandardScaler -> PCA(k) (exact eigendecomposition instead of randomized SVD; component signs may differ,
     which does not change ridge predictions)."""
 
-    def __init__(self, k: int, rows: int = 8192):
-        self.k, self.rows = k, rows
+    def __init__(self, k: int, max_elems: int = 8_000_000):
+        self.k, self.max_elems = k, max_elems   # rows per chunk scale with width: ~64 MB float64 per chunk
 
     def _chunks(self, X):
-        for i in range(0, len(X), self.rows):
-            yield np.asarray(X[i:i + self.rows], dtype=np.float64)
+        rows = max(256, self.max_elems // max(1, X.shape[1]))
+        for i in range(0, len(X), rows):
+            yield np.asarray(X[i:i + rows], dtype=np.float64)
 
     def fit(self, X):
         n, d = X.shape
@@ -151,8 +152,9 @@ class StreamPCA:
         self.scale_ = np.where(var > 0, np.sqrt(var), 1.0)
         C = np.zeros((d, d))
         for c in self._chunks(X):
-            z = (c - self.mean_) / self.scale_
-            C += z.T @ z
+            c -= self.mean_
+            c /= self.scale_   # in place: no second chunk-sized copy
+            C += c.T @ c
         w, v = np.linalg.eigh(C / max(n - 1, 1))
         self.components_ = v[:, ::-1][:, :self.k]
         return self

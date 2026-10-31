@@ -91,7 +91,7 @@ def main(argv=None):
         for e in encs:
             for k in a.ks:   # computed on demand per fold (memory): [x, mean of neighbours within k rings]
                 s.X[f"{e}_k{k}"] = (lambda x=s.X[e], c=s.coords, k=k:
-                                    ring_mean_features(x.astype(np.float32), c, k))
+                                    ring_mean_features(x.astype(np.float32), c, k).astype(np.float16))
     for e in encs:
         variants += [e] + [f"{e}_k{k}" for k in a.ks]
     gf, sg, _, fi = run_atlas_chunked(samples, folds, variants, groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
