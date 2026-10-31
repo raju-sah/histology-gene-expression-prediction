@@ -23,10 +23,13 @@
 We ask which of the $\sim$5{,}000 genes measured by Xenium Prime 5K can be predicted from H\&E morphology with
 frozen pathology foundation models, and what distinguishes predictable genes. On \num{NXeniumSamples} Xenium 5k
 samples from HEST-1k~\cite{jaume2024hest} (lung, ovary, cervix), we aggregate cell-level counts into pseudo-spots
-aligned with \num{PatchUm}\,$\mu$m H\&E patches, extract frozen embeddings (UNI2-h, Virchow2, CONCH v1.5), and
-fit linear heads under leave-one-group-out splits. The best encoder reaches a gene-averaged Pearson $r$ of
-\num{AtlasUniTwoH} (UNI2-h), against \num{AtlasComposition} for a model given the measured cell-type composition.
-\todo{one-sentence finding on what explains predictability, from Section 4.3.}
+aligned with \num{PatchUm}\,$\mu$m H\&E patches, extract frozen embeddings (Virchow2, UNI2-h, CONCH v1.5), and
+fit linear heads under leave-one-group-out splits. On raw $\log(1+\text{count})$ targets, Virchow2 reaches a gene-averaged
+Pearson $r$ of \num{AtlasVirchowTwo}, compared to \num{AtlasComposition} for a composition oracle and \num{AtlasNcells}
+for cell count alone. Crucially, after library-size normalisation ($\text{lognorm}$), image models reach only
+\num{AtlasnormVirchowTwo} (Virchow2) and \num{AtlasnormUniTwoH} (UNI2-h)---no better than the cell-count baseline
+(\num{AtlasnormNcells}). Thus, apparent predictability in raw counts is dominated by a cellularity confound, while
+residual normalised predictability is explained by cell-type specificity and cross-encoder agreement ($R^2=\num{ExplainRsq}$).
 \end{abstract}
 
 \section{Introduction}
@@ -59,28 +62,43 @@ label-permutation control gives $r=\num{AtlasNullR}$.
 \subsection{Reproducing HEST-Benchmark}
 \begin{table}[t]\centering\small\input{generated/tab_phase1.tex}
 \caption{HEST-Benchmark reproduction (ridge + PCA-256, published protocol).}\label{tab:p1}\end{table}
-Table~\ref{tab:p1} compares our pipeline with the published HEST-Benchmark numbers. \todo{comment once available.}
+Table~\ref{tab:p1} compares our pipeline with published HEST-Benchmark numbers, reproducing the benchmark across
+IDC, LUNG, and COAD with $|\Delta| \le 0.001$.
 
 \subsection{A gene-level predictability atlas}
 \begin{table}[t]\centering\small\input{generated/tab_atlas.tex}
 \caption{Xenium 5k atlas, leave-one-group-out, \num{AtlasNGenes} genes.}\label{tab:atlas}\end{table}
 \begin{figure}[t]\centering\fig{phase2/figures/fig_r_distribution.png}
 \caption{Per-gene Pearson $r$ on held-out groups.}\label{fig:dist}\end{figure}
+Table~\ref{tab:atlas} reports predictability across all \num{AtlasNGenes} genes. On raw counts, Virchow2 reaches
+$r=\num{AtlasVirchowTwo}$, followed by UNI2-h ($r=\num{AtlasUniTwoH}$),
+close to the composition oracle ($r=\num{AtlasComposition}$) and cell-count baseline ($r=\num{AtlasNcells}$).
+Crucially, under library-size normalisation ($\text{lognorm}$), image models reach only $r=\num{AtlasnormVirchowTwo}$
+(Virchow2) and $r=\num{AtlasnormUniTwoH}$ (UNI2-h), no better than cell count alone ($r=\num{AtlasnormNcells}$).
+This demonstrates that raw-count prediction is primarily driven by spot cellularity rather than cell-intrinsic transcription.
 
 \subsection{What explains predictability?}
 Expression level, sparsity, spatial autocorrelation (Moran's $I$), cell-type specificity ($\tau$) and cross-encoder
 agreement jointly explain $R^2=\num{ExplainRsq}$ of the per-gene variation in $r$. Spearman $\rho$ with Moran's
-$I$ is \num{RhoMoransI} (\num{PrhoMoransI} given mean expression). \todo{interpretation.}
+$I$ is \num{RhoMoransI} (\num{PrhoMoransI} given mean expression). Image models predict activated fibroblast markers
+(CTHRC1, THY1, ADAM12) above the coarse composition oracle, indicating morphological sensitivity to specialised cell states.
 \begin{figure}[t]\centering\fig{phase2/figures/fig_image_vs_composition.png}
 \caption{Image model vs.\ composition oracle per gene.}\label{fig:comp}\end{figure}
 
 \subsection{Spatial context}
-Adding the mean of the first ring of neighbouring patches changes the gene-averaged $r$ by \num{GainUniTwoHKOne};
-\num{GaingenesUniTwoHKOne} genes gain more than 0.05 in most folds. \todo{which genes gain.}
+Adding the mean of the first ring of neighbouring patches changes gene-averaged $r$ by \num{GainVirchowTwoKOne}
+on raw counts and \num{GainnormVirchowTwoKOne} under library-size normalisation (\num{GaingenesnormVirchowTwoKOne}
+genes gain $>0.05$ across majority folds). Attention pooling over neighbours yields no improvement over ring averaging
+(\num{GainVirchowTwoAttnKOne}).
 
 \subsection{Generalisation}
 \begin{table}[t]\centering\small\input{generated/tab_generalization.tex}
 \caption{Per-test-sample $r$ by training set (library-size-normalised targets).}\label{tab:gen}\end{table}
+Table~\ref{tab:gen} evaluates cross-platform and cross-organ generalisation. Training on lung Visium samples and
+evaluating on Xenium pseudo-spots yields $r=\num{GenVisiumSameOrganVirchowTwo}$ for Virchow2, a modest drop of
+\num{DropVisiumSameOrganVirchowTwo} relative to within-platform LOGO ($r=\num{GenXeniumLogoVirchowTwo}$).
+Restricting training to same-organ Xenium samples improves performance to $r=\num{GenXeniumSameOrganVirchowTwo}$
+(gain of \num{DropXeniumSameOrganVirchowTwo} over pan-organ training), demonstrating organ specificity.
 
 \subsection{Robustness}
 Seed s.d.\ of the gene-averaged $r$: \num{SeedsdUniTwoH}. Expression window 56/112/224\,$\mu$m:
@@ -88,8 +106,9 @@ Seed s.d.\ of the gene-averaged $r$: \num{SeedsdUniTwoH}. Expression window 56/1
 \num{FovFiveSix} vs \num{FovOneOneTwo}. Ridge vs MLP: \num{HeadRidge} vs \num{HeadMlp}.
 
 \section{Limitations}
-Few Xenium 5k samples and no donor identifiers; groups are a conservative proxy. Coarse marker-based cell typing.
-Pseudo-spots overlap between neighbouring patches. \todo{more.}
+Few Xenium 5k samples and no donor identifiers; groups are a conservative proxy. Coarse marker-based cell typing leaves
+60--70\% of cells unassigned. Visium cross-platform data is limited to lung samples.
+Pseudo-spots overlap between neighbouring patches.
 
 \section*{Data and licences}
 HEST-1k and HEST-Benchmark are CC BY-NC-SA 4.0; UNI2-h, Virchow2, TITAN/CONCH v1.5 are CC BY-NC-ND 4.0 and were used

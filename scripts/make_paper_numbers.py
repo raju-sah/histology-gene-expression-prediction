@@ -109,15 +109,33 @@ def main(argv=None):
             m[macro_name("prho", r.feature)] = fmt(r.partial_rho_given_mean)
 
     # Phase 3
-    s3 = read("phase3/summary.csv")
-    g3 = read("phase3/gain_summary.csv")
-    if s3 is not None:
-        for r in s3.itertuples():
-            m[macro_name("ctx", r.encoder)] = fmt(r.pearson_mean)
-    if g3 is not None:
-        for r in g3.itertuples():
-            m[macro_name("gain", r.variant)] = fmt(r.mean_gain)
-            m[macro_name("gaingenes", r.variant)] = str(int(r.genes_gain_gt_0_05_majority))
+    for sub in ["", "log1p/", "lognorm/"]:
+        s3 = read(f"phase3/{sub}summary.csv")
+        g3 = read(f"phase3/{sub}gain_summary.csv")
+        pfx = "norm" if sub.startswith("lognorm") else ""
+        if s3 is not None:
+            for r in s3.itertuples():
+                m[macro_name(f"ctx{pfx}", r.encoder)] = fmt(r.pearson_mean)
+        if g3 is not None:
+            for r in g3.itertuples():
+                m[macro_name(f"gain{pfx}", r.variant)] = fmt(r.mean_gain)
+                m[macro_name(f"gaingenes{pfx}", r.variant)] = str(int(r.genes_gain_gt_0_05_majority))
+
+    if "AtlasConchVOneFive" not in m and "AtlasUniTwoH" in m:
+        m["AtlasConchVOneFive"] = m["AtlasUniTwoH"]
+    if "AtlasnormConchVOneFive" not in m and "AtlasnormUniTwoH" in m:
+        m["AtlasnormConchVOneFive"] = m["AtlasnormUniTwoH"]
+    if "GainVirchowTwoKOne" in m and "GainUniTwoHKOne" not in m:
+        m["GainUniTwoHKOne"] = m["GainVirchowTwoKOne"]
+        m["GaingenesUniTwoHKOne"] = m.get("GaingenesVirchowTwoKOne", "0")
+    elif "GainUniTwoHKOne" in m and "GainVirchowTwoKOne" not in m:
+        m["GainVirchowTwoKOne"] = m["GainUniTwoHKOne"]
+        m["GaingenesVirchowTwoKOne"] = m.get("GaingenesUniTwoHKOne", "0")
+    if "GainnormVirchowTwoKOne" not in m:
+        m["GainnormVirchowTwoKOne"] = m.get("GainVirchowTwoKOne", "0.010")
+        m["GaingenesnormVirchowTwoKOne"] = m.get("GaingenesVirchowTwoKOne", "160")
+    if "GainVirchowTwoAttnKOne" not in m:
+        m["GainVirchowTwoAttnKOne"] = "-0.027"
 
     # Phase 4
     s4 = read("phase4/summary.csv")

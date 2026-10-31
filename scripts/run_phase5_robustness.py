@@ -93,7 +93,9 @@ def main(argv=None):
         agg.to_csv(out / "seeds_summary.csv")
         results["seeds"] = agg
         print(agg.to_string())
-        del samples
+        del samples, gf, sg
+        import gc
+        gc.collect()
 
     if "window" not in a.skip:
         have = {w: um for w, um in WINDOWS.items() if all((root / DATASET / w / f"{s}.h5").exists() for s in ids)}
@@ -109,6 +111,9 @@ def main(argv=None):
                 rows.append({"encoder": encs[0], "window_um": um, "pearson_mean": m, "ci_lo": lo, "ci_hi": hi,
                              "n_genes": len(g_w)})
                 log(encs[0], "xenium5k_atlas", "logo_5groups", f"ridge_window{um}um", "pearson_mean", m, notes=f"y={a.y_kind}")
+                del samples, gf, sg
+                import gc
+                gc.collect()
             results["window"] = pd.DataFrame(rows)
             results["window"].to_csv(out / "window_size.csv", index=False)
             print(results["window"].to_string())
@@ -131,7 +136,9 @@ def main(argv=None):
             pd.DataFrame({"gene": np.asarray(genes)[g.index], "r_112um": g["uni2_h"], "r_56um": g["uni2_h_c56"]}).to_csv(
                 out / "field_of_view_genes.csv", index=False)
             print(results["fov"].to_string())
-            del samples
+            del samples, gf, sg
+            import gc
+            gc.collect()
         else:
             print("field-of-view sensitivity skipped: uni2_h_c56 not downloaded")
 
@@ -142,6 +149,9 @@ def main(argv=None):
         dense = {s: SampleData(s, v.X[a.mlp_encoder].astype(np.float32), v.Y.toarray(), v.barcodes, v.coords,
                                np.asarray(gsub))
                  for s, v in sp_samples.items()}
+        del sp_samples
+        import gc
+        gc.collect()
         rows = []
         heads = {"ridge": lambda seed: RidgeCVHead(pca_dim=256, per_gene_alpha=True, seed=seed),
                  "mlp": lambda seed: MLPHead(hidden=512, pca_dim=256, seed=seed, max_epochs=60, patience=8, device=DEVICE)}

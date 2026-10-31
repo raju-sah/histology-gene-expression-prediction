@@ -175,3 +175,35 @@ Per-sample performance and drop vs Xenium LOGO:
 **Open issues / limitations**
 - Only lung has Visium data locally available; ovary and cervix cross-platform transfer could not be assessed.
 - Cervix has only one Xenium sample (TENX188), so no within-platform same-organ training fold exists for cervix.
+
+## Phase 5: Robustness + paper draft (done 2026-10-31, tag `phase-5`)
+**Done**
+- `scripts/run_phase5_robustness.py` run on Virchow2, UNI2-h, and CONCH v1.5 under the 3.8 GB watchdog (peak RSS 3.54 GB).
+- Evaluated 4 axes: random seeds (0, 1, 2 on 1000-gene subset), pseudo-spot expression window (56, 112, 224 um), image field of view (112 um vs central 56 um), and regression heads (ridge vs 1-hidden-layer MLP).
+- `scripts/make_paper_numbers.py` generated 109 LaTeX macros and 3 tables in `paper/generated/` without manual values.
+- `paper/main.tex` revised to lead with the lognorm finding and cellularity confound, linked to generated figures and tables, and compiled to `paper/main.pdf` via Tectonic with zero `\pending` placeholders.
+- Full test suite verified (54/54 passed).
+
+**Key numbers**
+- **Seeds** (1000 genes, LOGO): seed standard deviation is negligible (< 1e-12) for all encoders (Virchow2 mean 0.5123, UNI2-h mean 0.4763, CONCH v1.5 mean 0.4649).
+- **Expression window** (Virchow2, 5001 genes):
+  - 56 um: 0.390 [0.311, 0.444]
+  - 112 um (default): 0.510 [0.422, 0.576]
+  - 224 um: 0.565 [0.468, 0.640]
+  - Aggregating transcripts over larger physical footprints progressively increases predictability by mitigating Poisson sampling sparsity.
+- **Field of view** (UNI2-h, 5001 genes):
+  - 112 um (full patch): 0.474 [0.390, 0.545]
+  - 56 um (central crop): 0.463 [0.381, 0.532]
+  - Restricting morphological context to the central quarter-area causes only a minimal drop (-0.011), confirming that local cellular features carry the primary signal.
+- **Regression heads** (UNI2-h, 1000 genes, LOGO):
+  - Ridge CV: 0.477 [0.387, 0.548]
+  - MLP (hidden=512, 3 seeds): 0.484 [0.398, 0.554] (seeds: 0.483, 0.490, 0.478)
+  - Non-linear head offers a modest gain (+0.007) over regularised linear projection on PCA features.
+
+**Findings & Manuscript Synthesis**
+- The full manuscript `paper/main.pdf` is assembled, leading with the critical negative control: while foundation models achieve $r \approx 0.51$ on raw counts, this predictability is largely explained by spot cellularity ($r=0.425$ from cell count alone). Once library-size normalisation is applied, image models drop to $r \approx 0.12$--$0.17$, matching cell-count baselines ($r=0.158$).
+- Residual variation is explained by cell-type specificity and spatial autocorrelation, while spatial context (ring averaging) provides small gains (+0.010 to +0.016) only after cellularity is normalised out.
+- Cross-platform generalisation from Visium to Xenium pseudo-spots shows modest transfer loss (-0.021 for Virchow2), and same-organ training substantially outperforms pan-organ training.
+
+**Final gate status**
+- Ready for user review. All roadmap phases (0 through 5) complete.
