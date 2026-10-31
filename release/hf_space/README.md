@@ -3,9 +3,7 @@ title: HEST Xenium 5k Atlas Explorer
 emoji: 🔬
 colorFrom: blue
 colorTo: indigo
-sdk: gradio
-sdk_version: 6.31.0
-app_file: app.py
+sdk: static
 pinned: false
 license: cc-by-nc-sa-4.0
 tags:
@@ -17,7 +15,7 @@ tags:
 
 # HEST Xenium 5k Gene Expression Predictability Atlas Explorer
 
-An interactive Gradio explorer for benchmarking histology foundation models (Virchow2, UNI2-h, CONCH v1.5) predicting spatial gene expression across 5,001 genes on 6 Xenium 5k tissue sections from HEST-1k.
+An interactive Static web application for benchmarking histology foundation models (Virchow2, UNI2-h, CONCH v1.5) predicting spatial gene expression across 5,001 genes on 6 Xenium 5k tissue sections from HEST-1k.
 
 ### Key Finding
 **The Cellularity Confound:** Histopathology image foundation models achieve seemingly high correlation ($r \approx 0.51$) under raw `log1p` targets, but this is predominantly confounded by spot cellularity (cell density). After library-size normalisation (`lognorm`), foundation models ($r \approx 0.167$) barely outperform a scalar cell count baseline ($r \approx 0.158$).

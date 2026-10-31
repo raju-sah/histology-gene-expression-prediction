@@ -123,3 +123,16 @@ def test_space_app_callbacks():
         assert len(figs) == 6
         for fpath in figs:
             assert fpath is not None and Path(fpath).exists(), f"Figure {fpath} does not exist"
+
+def test_static_space_index_html():
+    index_path = HF_SPACE / "index.html"
+    assert index_path.exists(), "index.html is missing in release/hf_space"
+    content = index_path.read_text()
+    assert "<!DOCTYPE html>" in content
+    assert "HEST Xenium 5k" in content
+    assert "lognorm" in content and "log1p" in content
+    assert "F11R" in content
+    assert "data/atlas_lognorm.csv" in content
+    assert "data/context_gain_lognorm.csv" in content
+    assert "figures/lognorm/" in content
+

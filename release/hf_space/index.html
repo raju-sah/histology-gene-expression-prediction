@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HEST Xenium 5k Atlas Explorer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PapaParse for fast CSV parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Plotly.js for interactive scatter plots -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    .tab-btn.active {
+      border-color: #3b82f6;
+      color: #1d4ed8;
+      background-color: #eff6ff;
+    }
+    .sort-icon::after {
+      content: ' ↕';
+      opacity: 0.3;
+    }
+    .sort-asc::after {
+      content: ' ↑';
+      opacity: 1;
+    }
+    .sort-desc::after {
+      content: ' ↓';
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <div class="max-w-7xl mx-auto px-4 py-8">
+    
+    <!-- Header -->
+    <header class="mb-6">
+      <div class="flex items-center justify-between flex-wrap gap-4 mb-3">
+        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+          <span>🔬</span> HEST Xenium 5k Predictability Atlas Explorer
+        </h1>
+        <div class="flex gap-2">
+          <a href="https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas" target="_blank" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-3 py-1.5 rounded-full transition">
+            🤗 Dataset Card
+          </a>
+          <a href="https://github.com/TODO" target="_blank" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-3 py-1.5 rounded-full transition">
+            💻 GitHub Code (TODO)
+          </a>
+          <span class="text-xs bg-blue-100 text-blue-800 font-semibold px-3 py-1.5 rounded-full">
+            5,001 Genes • 6 Samples • LOGO
+          </span>
+        </div>
+      </div>
+
+      <!-- Caveat Banner -->
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-md shadow-sm">
+        <div class="flex items-start">
+          <div class="text-amber-500 text-xl font-bold mr-3">⚠️</div>
+          <div>
+            <h3 class="text-sm font-bold text-amber-900">Key Finding & Normalisation Caveat:</h3>
+            <p class="text-xs text-amber-800 mt-1 leading-relaxed">
+              While histopathology foundation models achieve seemingly high correlation (<span class="font-semibold">r ≈ 0.51</span>) under raw <code class="bg-amber-100 px-1 rounded font-mono">log1p</code> targets, this predictability is almost entirely driven by spot cellularity (cell density). After standard library-size normalisation (<code class="bg-amber-100 px-1 rounded font-mono">lognorm</code>), foundation models (<span class="font-semibold">r ≈ 0.167</span>) <strong class="underline">barely outperform a scalar cell-count baseline (r ≈ 0.158)</strong> and an 8-cell-type composition oracle (<span class="font-semibold">r ≈ 0.137</span>).
+            </p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Target Selector Switch -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Transformation</span>
+        <div class="text-sm font-medium text-slate-700" id="target-desc">
+          Currently viewing: <strong class="text-blue-600">lognorm</strong> (library-size normalised expression, controlling for spot cellularity)
+        </div>
+      </div>
+      <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-100">
+        <button id="btn-target-lognorm" onclick="setTarget('lognorm')" class="px-4 py-2 text-xs font-bold rounded-md bg-white text-blue-700 shadow-sm transition">
+          Normalised (lognorm)
+        </button>
+        <button id="btn-target-log1p" onclick="setTarget('log1p')" class="px-4 py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition">
+          Raw Counts (log1p)
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Navigation Tabs -->
+    <div class="border-b border-slate-200 mb-6 flex space-x-1 overflow-x-auto text-sm font-medium">
+      <button onclick="switchTab('tab-search')" id="tab-btn-search" class="tab-btn active px-4 py-2.5 border-b-2 font-semibold text-slate-700 whitespace-nowrap transition">
+        🔍 Gene Search
+      </button>
+      <button onclick="switchTab('tab-table')" id="tab-btn-table" class="tab-btn px-4 py-2.5 border-b-2 border-transparent font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        📊 Filterable Atlas Table
+      </button>
+      <button onclick="switchTab('tab-scatter')" id="tab-btn-scatter" class="tab-btn px-4 py-2.5 border-b-2 border-transparent font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        📈 r vs Moran's I Scatter
+      </button>
+      <button onclick="switchTab('tab-phase3')" id="tab-btn-phase3" class="tab-btn px-4 py-2.5 border-b-2 border-transparent font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        🌐 Phase 3: Spatial Context
+      </button>
+      <button onclick="switchTab('tab-phase4')" id="tab-btn-phase4" class="tab-btn px-4 py-2.5 border-b-2 border-transparent font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        🚀 Phase 4: Generalization
+      </button>
+      <button onclick="switchTab('tab-phase5')" id="tab-btn-phase5" class="tab-btn px-4 py-2.5 border-b-2 border-transparent font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        🛡️ Phase 5: Robustness
+      </button>
+      <button onclick="switchTab('tab-figures')" id="tab-btn-figures" class="tab-btn px-4 py-2.5 border-b-2 border-transparent font-semibold text-slate-600 hover:text-slate-900 whitespace-nowrap transition">
+        🖼️ Paper Figures
+      </button>
+    </div>
+
+    <!-- TAB 1: GENE SEARCH -->
+    <div id="tab-search" class="tab-content block">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Search Controls -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <label class="block text-xs font-bold uppercase text-slate-500 mb-2">Search Gene Symbol</label>
+          <div class="flex gap-2 mb-4">
+            <input type="text" id="gene-search-input" value="F11R" placeholder="e.g. F11R, EPCAM, CD3D..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono">
+            <button onclick="performGeneSearch()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition">
+              Search
+            </button>
+          </div>
+          <div class="text-xs text-slate-500 mb-2 font-medium">Quick samples:</div>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="quickSearch('F11R')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-mono">F11R</button>
+            <button onclick="quickSearch('EPCAM')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-mono">EPCAM</button>
+            <button onclick="quickSearch('CD3D')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-mono">CD3D</button>
+            <button onclick="quickSearch('ERBB2')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-mono">ERBB2</button>
+            <button onclick="quickSearch('MKI67')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-mono">MKI67</button>
+            <button onclick="quickSearch('COL1A1')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-mono">COL1A1</button>
+          </div>
+        </div>
+
+        <!-- Gene Details Card -->
+        <div id="gene-card-container" class="md:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div class="text-slate-400 text-sm">Loading gene atlas...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: FILTERABLE ATLAS TABLE -->
+    <div id="tab-table" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        
+        <!-- Controls -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Preset Filter</label>
+            <select id="preset-select" onchange="applyTableFilters()" class="w-full text-xs border border-slate-300 rounded-lg p-2 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="all">All Genes (5,001)</option>
+              <option value="beats_comp">Image beats composition (r_diff &gt; 0)</option>
+              <option value="top_pred">Top Predictable (Sorted by Virchow2)</option>
+              <option value="context_gain">Gains from spatial context (+k1 &gt; 0)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Filter by Top Cell Type</label>
+            <select id="celltype-select" onchange="applyTableFilters()" class="w-full text-xs border border-slate-300 rounded-lg p-2 bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="all">All Cell Types</option>
+              <option value="epithelial">epithelial</option>
+              <option value="b">b cell</option>
+              <option value="t_nk">t / nk cell</option>
+              <option value="myeloid">myeloid</option>
+              <option value="plasma">plasma</option>
+              <option value="endothelial">endothelial</option>
+              <option value="fibroblast">fibroblast</option>
+              <option value="smooth_muscle_pericyte">smooth muscle / pericyte</option>
+              <option value="mast">mast</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Search Symbol</label>
+            <input type="text" id="table-search-input" oninput="applyTableFilters()" placeholder="Filter by gene prefix..." class="w-full text-xs border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-blue-500 outline-none uppercase font-mono">
+          </div>
+        </div>
+
+        <!-- Table Summary and Pagination Header -->
+        <div class="flex items-center justify-between text-xs text-slate-500 mb-3">
+          <div id="table-stats">Showing 0 genes</div>
+          <div class="flex items-center gap-2">
+            <button onclick="prevPage()" id="btn-prev-page" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded disabled:opacity-40" disabled>Previous</button>
+            <span id="page-indicator">Page 1 / 1</span>
+            <button onclick="nextPage()" id="btn-next-page" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded disabled:opacity-40" disabled>Next</button>
+          </div>
+        </div>
+
+        <!-- Scrollable Table -->
+        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200 select-none">
+                <th onclick="sortTable('gene')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-gene">Gene</th>
+                <th onclick="sortTable('r_virchow2')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-r_virchow2">Virchow2 (r)</th>
+                <th onclick="sortTable('r_uni2_h')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-r_uni2_h">UNI2-h (r)</th>
+                <th onclick="sortTable('r_conch_v15')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-r_conch_v15">CONCH (r)</th>
+                <th onclick="sortTable('r_composition')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-r_composition">Composition (r)</th>
+                <th onclick="sortTable('r_ncells')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-r_ncells">Cell Count (r)</th>
+                <th onclick="sortTable('r_image_minus_composition')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-r_image_minus_composition">Image − Comp</th>
+                <th onclick="sortTable('morans_i')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-morans_i">Moran's I</th>
+                <th onclick="sortTable('tau')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-tau">Tau (τ)</th>
+                <th onclick="sortTable('top_type')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-top_type">Top Cell Type</th>
+                <th onclick="sortTable('gain_virchow2_k1')" class="p-2.5 cursor-pointer hover:bg-slate-200 sort-icon" id="th-gain_virchow2_k1">Context +k1</th>
+              </tr>
+            </thead>
+            <tbody id="atlas-table-body" class="divide-y divide-slate-100 font-mono text-slate-700">
+              <tr><td colspan="11" class="p-4 text-center text-slate-400">Loading atlas data...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: SCATTER PLOT -->
+    <div id="tab-scatter" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h2 class="text-base font-bold text-slate-800 mb-1">Spatial Autocorrelation (Moran's I) vs Foundation Model Predictability</h2>
+        <p class="text-xs text-slate-500 mb-4">Each point represents one gene, coloured by its highest-expressing cell type in reference annotations. Hover for details or use the toolbar to zoom and pan.</p>
+        <div id="plotly-scatter" style="height: 580px;" class="w-full"></div>
+      </div>
+    </div>
+
+    <!-- TAB 4: PHASE 3 SPATIAL CONTEXT -->
+    <div id="tab-phase3" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 mb-1">Phase 3: Spatial Context Ablation</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Comparing single-patch histology embeddings (center 112 µm) against pooled embeddings aggregating immediate hexagonal spatial neighbor rings (+k1 = 6 neighbors, radius ~112 µm; +k2 = 18 neighbors) and learned attention pooling.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">Macro-Average Pearson r by Target</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr class="border-b border-slate-200 font-semibold text-slate-600">
+                    <th class="py-2">Context Architecture</th>
+                    <th class="py-2">lognorm (Normalised)</th>
+                    <th class="py-2">log1p (Raw Counts)</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 font-mono">
+                  <tr><td class="py-2 font-sans font-medium">Virchow2 Single Patch (112 µm)</td><td class="py-2">0.167</td><td class="py-2">0.510</td></tr>
+                  <tr><td class="py-2 font-sans font-medium">Virchow2 + k=1 Ring (6 neighbors)</td><td class="py-2 text-blue-600 font-bold">0.178 (+0.011)</td><td class="py-2">0.514 (+0.004)</td></tr>
+                  <tr><td class="py-2 font-sans font-medium">Virchow2 + k=2 Rings (18 neighbors)</td><td class="py-2 text-blue-600 font-bold">0.184 (+0.017)</td><td class="py-2">0.513 (+0.003)</td></tr>
+                  <tr><td class="py-2 font-sans font-medium">Virchow2 Attention (k=1)</td><td class="py-2">0.171 (+0.004)</td><td class="py-2">0.485 (-0.025)</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-lg p-4 bg-blue-50/50">
+            <h3 class="text-sm font-bold text-blue-900 mb-2">Key Takeaways</h3>
+            <ul class="text-xs text-blue-800 space-y-2 list-disc list-inside">
+              <li><strong class="font-semibold">Under raw log1p:</strong> Expanding spatial context provides minimal gain (+0.004) because spot cellularity (tissue density) is already primarily localized to the central patch.</li>
+              <li><strong class="font-semibold">Under normalised lognorm:</strong> Adding spatial rings consistently improves prediction (<span class="font-bold">0.167 → 0.178 → 0.184</span>). When total cellularity is normalised, surrounding morphological architecture helps resolve cell states and microenvironmental niches.</li>
+              <li><strong class="font-semibold">Attention pooling:</strong> Learned attention on frozen embeddings does not outperform uniform mean-pooling across neighbor rings.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: PHASE 4 GENERALIZATION -->
+    <div id="tab-phase4" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 mb-1">Phase 4: Cross-Platform & Cross-Patient Generalization</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Evaluating transfer from Visium 10x spatial transcriptomics to single-cell resolution Xenium 5k on 4,634 shared genes under library-size normalisation (<code class="bg-slate-100 px-1 rounded font-mono">lognorm</code>).
+          </p>
+        </div>
+
+        <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 font-semibold text-slate-600">
+                  <th class="py-2">Evaluation Setting</th>
+                  <th class="py-2">Encoder</th>
+                  <th class="py-2">Mean r (Test)</th>
+                  <th class="py-2">Change vs Within-Platform LOGO</th>
+                  <th class="py-2">Test Samples</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 font-mono">
+                <tr><td class="py-2 font-sans font-medium">Visium → Xenium Transfer (Same Organ)</td><td class="py-2">Virchow2</td><td class="py-2">0.132</td><td class="py-2 text-rose-600">-0.021</td><td class="py-2">3</td></tr>
+                <tr><td class="py-2 font-sans font-medium">Visium → Xenium Transfer (Same Organ)</td><td class="py-2">UNI2-h</td><td class="py-2">0.117</td><td class="py-2 text-rose-600">-0.026</td><td class="py-2">3</td></tr>
+                <tr class="bg-white"><td class="py-2 font-sans font-medium">Xenium Within-Platform LOGO Benchmark</td><td class="py-2">Virchow2</td><td class="py-2">0.164</td><td class="py-2 text-slate-400">0.000 (Baseline)</td><td class="py-2">6</td></tr>
+                <tr class="bg-white"><td class="py-2 font-sans font-medium">Xenium Within-Platform LOGO Benchmark</td><td class="py-2">UNI2-h</td><td class="py-2">0.148</td><td class="py-2 text-slate-400">0.000 (Baseline)</td><td class="py-2">6</td></tr>
+                <tr><td class="py-2 font-sans font-medium">Xenium Same-Organ Transfer</td><td class="py-2">Virchow2</td><td class="py-2 text-blue-700 font-bold">0.205</td><td class="py-2 text-emerald-600 font-bold">+0.034</td><td class="py-2">5</td></tr>
+                <tr><td class="py-2 font-sans font-medium">Xenium Same-Organ Transfer</td><td class="py-2">UNI2-h</td><td class="py-2 text-blue-700 font-bold">0.173</td><td class="py-2 text-emerald-600 font-bold">+0.019</td><td class="py-2">5</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: PHASE 5 ROBUSTNESS -->
+    <div id="tab-phase5" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 mb-1">Phase 5: Robustness Checks & Ablations</h2>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Sensitivity analyses verifying pipeline determinism, prediction head expressivity, expression window sizing, and optical field of view.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Determinism -->
+          <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">1. Determinism Across Seeds</h3>
+            <table class="w-full text-left text-xs border-collapse">
+              <thead><tr class="border-b border-slate-200 font-semibold text-slate-600"><th class="py-1">Model</th><th class="py-1">Mean r</th><th class="py-1">Std across seeds</th></tr></thead>
+              <tbody class="divide-y divide-slate-200 font-mono">
+                <tr><td class="py-1.5 font-sans">Virchow2</td><td>0.5123</td><td class="text-emerald-700">&lt; 1e-12</td></tr>
+                <tr><td class="py-1.5 font-sans">UNI2-h</td><td>0.4763</td><td class="text-emerald-700">&lt; 1e-12</td></tr>
+                <tr><td class="py-1.5 font-sans">CONCH v1.5</td><td>0.4649</td><td class="text-emerald-700">&lt; 1e-12</td></tr>
+              </tbody>
+            </table>
+            <p class="text-xs text-slate-500 mt-2">*Ridge regression with exact PCA is fully deterministic.*</p>
+          </div>
+
+          <!-- Head -->
+          <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">2. Linear Ridge vs MLP Heads</h3>
+            <table class="w-full text-left text-xs border-collapse">
+              <thead><tr class="border-b border-slate-200 font-semibold text-slate-600"><th class="py-1">Head Type</th><th class="py-1">Mean r (1,000 genes)</th><th class="py-1">95% CI</th></tr></thead>
+              <tbody class="divide-y divide-slate-200 font-mono">
+                <tr><td class="py-1.5 font-sans">Linear Ridge CV</td><td>0.477</td><td>[0.387, 0.548]</td></tr>
+                <tr><td class="py-1.5 font-sans">2-Layer MLP (Seed 0)</td><td>0.483</td><td>[0.395, 0.555]</td></tr>
+                <tr><td class="py-1.5 font-sans">2-Layer MLP (Mean across seeds)</td><td>0.484</td><td>[0.398, 0.553]</td></tr>
+              </tbody>
+            </table>
+            <p class="text-xs text-slate-500 mt-2">*Nonlinear MLP yields negligible gain (+0.007) over linear Ridge.*</p>
+          </div>
+
+          <!-- Window Size -->
+          <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">3. Expression Window Sizing (Virchow2)</h3>
+            <table class="w-full text-left text-xs border-collapse">
+              <thead><tr class="border-b border-slate-200 font-semibold text-slate-600"><th class="py-1">Window Size</th><th class="py-1">lognorm r</th><th class="py-1">log1p r</th></tr></thead>
+              <tbody class="divide-y divide-slate-200 font-mono">
+                <tr><td class="py-1.5 font-sans">56 µm</td><td>0.143</td><td>0.390</td></tr>
+                <tr class="bg-blue-50 font-bold"><td class="py-1.5 font-sans">112 µm (Benchmark default)</td><td class="text-blue-700">0.167</td><td>0.510</td></tr>
+                <tr><td class="py-1.5 font-sans">224 µm</td><td>0.151</td><td>0.565</td></tr>
+              </tbody>
+            </table>
+            <p class="text-xs text-slate-500 mt-2">*112 µm is the optimal resolution under cellularity-normalised expression.*</p>
+          </div>
+
+          <!-- FOV -->
+          <div class="border border-slate-200 rounded-lg p-4 bg-slate-50">
+            <h3 class="text-sm font-bold text-slate-800 mb-2">4. Optical Field of View (UNI2-h)</h3>
+            <table class="w-full text-left text-xs border-collapse">
+              <thead><tr class="border-b border-slate-200 font-semibold text-slate-600"><th class="py-1">Patch Size</th><th class="py-1">lognorm r</th><th class="py-1">log1p r</th></tr></thead>
+              <tbody class="divide-y divide-slate-200 font-mono">
+                <tr class="bg-blue-50 font-bold"><td class="py-1.5 font-sans">112 µm (Full Patch)</td><td class="text-blue-700">0.148</td><td>0.474</td></tr>
+                <tr><td class="py-1.5 font-sans">56 µm (Central Sub-patch)</td><td>0.117</td><td>0.463</td></tr>
+              </tbody>
+            </table>
+            <p class="text-xs text-slate-500 mt-2">*Restricting optical FOV reduces predictability by 0.031 under lognorm.*</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 7: PAPER FIGURES -->
+    <div id="tab-figures" class="tab-content hidden">
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+        <div>
+          <h2 class="text-lg font-bold text-slate-900 mb-1">Paper Figures</h2>
+          <p class="text-xs text-slate-600">High-resolution evaluation figures corresponding to the active target transformation (<span id="fig-target-label" class="font-bold text-blue-600">lognorm</span>).</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-700 mb-2">Figure 1: Foundation Model Agreement</h4>
+            <img id="img-fig1" src="figures/lognorm/fig_encoder_agreement.png" alt="Encoder Agreement" class="w-full rounded border border-slate-200 bg-white">
+          </div>
+          <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-700 mb-2">Figure 2: Image vs Cell Composition Baseline</h4>
+            <img id="img-fig2" src="figures/lognorm/fig_image_vs_composition.png" alt="Image vs Composition" class="w-full rounded border border-slate-200 bg-white">
+          </div>
+          <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-700 mb-2">Figure 3: Predictability Distribution</h4>
+            <img id="img-fig3" src="figures/lognorm/fig_r_distribution.png" alt="Distribution of r" class="w-full rounded border border-slate-200 bg-white">
+          </div>
+          <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-700 mb-2">Figure 4: Predictability by Top Cell Type</h4>
+            <img id="img-fig4" src="figures/lognorm/fig_r_by_celltype.png" alt="r by Cell Type" class="w-full rounded border border-slate-200 bg-white">
+          </div>
+          <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-700 mb-2">Figure 5: Predictability vs Moran's I</h4>
+            <img id="img-fig5" src="figures/lognorm/fig_r_vs_morans.png" alt="r vs Moran's I" class="w-full rounded border border-slate-200 bg-white">
+          </div>
+          <div class="border border-slate-200 rounded-lg p-3 bg-slate-50">
+            <h4 class="text-xs font-bold text-slate-700 mb-2">Figure 6: Predictability vs Mean Expression</h4>
+            <img id="img-fig6" src="figures/lognorm/fig_r_vs_mean.png" alt="r vs Mean" class="w-full rounded border border-slate-200 bg-white">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    let currentTarget = 'lognorm';
+    let atlasData = { lognorm: [], log1p: [] };
+    let filteredTableData = [];
+    let currentPage = 1;
+    const PAGE_SIZE = 25;
+    let currentSortCol = 'r_virchow2';
+    let currentSortAsc = false;
+    let scatterInitialized = false;
+
+    // Load CSV helper
+    function loadCSV(url) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          download: true,
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: (results) => resolve(results.data),
+          error: (err) => reject(err)
+        });
+      });
+    }
+
+    // Initialize application
+    async function init() {
+      try {
+        console.log('Loading dataset CSVs...');
+        const [atlasNorm, ctxNorm, atlas1p, ctx1p] = await Promise.all([
+          loadCSV('data/atlas_lognorm.csv'),
+          loadCSV('data/context_gain_lognorm.csv'),
+          loadCSV('data/atlas_log1p.csv'),
+          loadCSV('data/context_gain_log1p.csv')
+        ]);
+
+        // Merge context gains
+        const ctxNormMap = new Map(ctxNorm.map(d => [d.gene, d]));
+        atlasNorm.forEach(d => {
+          const c = ctxNormMap.get(d.gene);
+          d.gain_virchow2_k1 = c ? c.gain_virchow2_k1 : null;
+          d.gain_virchow2_k2 = c ? c.gain_virchow2_k2 : null;
+        });
+
+        const ctx1pMap = new Map(ctx1p.map(d => [d.gene, d]));
+        atlas1p.forEach(d => {
+          const c = ctx1pMap.get(d.gene);
+          d.gain_virchow2_k1 = c ? c.gain_virchow2_k1 : null;
+          d.gain_virchow2_k2 = c ? c.gain_virchow2_k2 : null;
+        });
+
+        atlasData.lognorm = atlasNorm;
+        atlasData.log1p = atlas1p;
+
+        console.log(`Loaded ${atlasNorm.length} lognorm genes, ${atlas1p.length} log1p genes.`);
+        
+        // Initial render
+        renderGeneCard('F11R');
+        applyTableFilters();
+      } catch (err) {
+        console.error('Error loading CSVs:', err);
+        document.getElementById('gene-card-container').innerHTML = `
+          <div class="text-rose-600 text-xs">Error loading dataset CSV files: ${err.message || err}</div>
+        `;
+      }
+    }
+
+    // Target switching
+    function setTarget(target) {
+      currentTarget = target;
+      
+      const btnNorm = document.getElementById('btn-target-lognorm');
+      const btn1p = document.getElementById('btn-target-log1p');
+      const desc = document.getElementById('target-desc');
+      const figLabel = document.getElementById('fig-target-label');
+
+      if (target === 'lognorm') {
+        btnNorm.className = 'px-4 py-2 text-xs font-bold rounded-md bg-white text-blue-700 shadow-sm transition';
+        btn1p.className = 'px-4 py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+        desc.innerHTML = 'Currently viewing: <strong class="text-blue-600">lognorm</strong> (library-size normalised expression, controlling for spot cellularity)';
+        figLabel.textContent = 'lognorm';
+      } else {
+        btn1p.className = 'px-4 py-2 text-xs font-bold rounded-md bg-white text-blue-700 shadow-sm transition';
+        btnNorm.className = 'px-4 py-2 text-xs font-bold rounded-md text-slate-600 hover:text-slate-900 transition';
+        desc.innerHTML = 'Currently viewing: <strong class="text-amber-600">log1p</strong> (raw log(1+count), confounded by spot cellularity)';
+        figLabel.textContent = 'log1p';
+      }
+
+      // Update paper figures
+      ['fig1', 'fig2', 'fig3', 'fig4', 'fig5', 'fig6'].forEach((id, idx) => {
+        const names = [
+          'fig_encoder_agreement.png', 'fig_image_vs_composition.png',
+          'fig_r_distribution.png', 'fig_r_by_celltype.png',
+          'fig_r_vs_morans.png', 'fig_r_vs_mean.png'
+        ];
+        document.getElementById('img-' + id).src = `figures/${target}/${names[idx]}`;
+      });
+
+      // Update active tab views
+      const activeSearchGene = document.getElementById('gene-search-input').value || 'F11R';
+      renderGeneCard(activeSearchGene);
+      applyTableFilters();
+      if (!document.getElementById('tab-scatter').classList.contains('hidden')) {
+        renderScatterPlot();
+      }
+    }
+
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(tabId).classList.remove('hidden');
+      const btnId = tabId.replace('tab-', 'tab-btn-');
+      const btn = document.getElementById(btnId);
+      if (btn) btn.classList.add('active');
+
+      if (tabId === 'tab-scatter') {
+        renderScatterPlot();
+      }
+    }
+
+    // Gene Search
+    function performGeneSearch() {
+      const q = document.getElementById('gene-search-input').value.trim();
+      renderGeneCard(q);
+    }
+
+    function quickSearch(gene) {
+      document.getElementById('gene-search-input').value = gene;
+      renderGeneCard(gene);
+    }
+
+    function renderGeneCard(geneSymbol) {
+      const container = document.getElementById('gene-card-container');
+      const data = atlasData[currentTarget];
+      if (!data || data.length === 0) return;
+
+      const sym = geneSymbol.trim().toUpperCase();
+      const r = data.find(d => d.gene && d.gene.toUpperCase() === sym);
+
+      if (!r) {
+        container.innerHTML = `
+          <div class="p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs">
+            Gene <strong>${sym}</strong> not found in the 5,001 targeted gene panel.
+          </div>
+        `;
+        return;
+      }
+
+      const fmt = (v) => (v !== null && v !== undefined && !isNaN(v)) ? Number(v).toFixed(3) : 'N/A';
+      const fmtDiff = (v) => (v !== null && v !== undefined && !isNaN(v)) ? (v > 0 ? '+' : '') + Number(v).toFixed(3) : 'N/A';
+
+      container.innerHTML = `
+        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+          <div>
+            <span class="text-xs font-semibold text-slate-400 uppercase">Gene Profile</span>
+            <h3 class="text-2xl font-black text-slate-900 tracking-tight font-mono">${r.gene}</h3>
+          </div>
+          <span class="text-xs px-2.5 py-1 bg-slate-100 text-slate-700 font-semibold rounded-full border border-slate-200">
+            Target: <code class="font-bold">${currentTarget}</code>
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5 text-xs">
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <span class="text-slate-500 font-medium">Virchow2</span>
+            <div class="text-lg font-bold text-blue-700 font-mono mt-0.5">${fmt(r.r_virchow2)}</div>
+            <span class="text-[10px] text-slate-400">Paige AI 632M ViT</span>
+          </div>
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <span class="text-slate-500 font-medium">UNI2-h</span>
+            <div class="text-lg font-bold text-slate-800 font-mono mt-0.5">${fmt(r.r_uni2_h)}</div>
+            <span class="text-[10px] text-slate-400">Mahmood Lab ViT-G</span>
+          </div>
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <span class="text-slate-500 font-medium">CONCH v1.5</span>
+            <div class="text-lg font-bold text-slate-800 font-mono mt-0.5">${fmt(r.r_conch_v15)}</div>
+            <span class="text-[10px] text-slate-400">Vision-Language FM</span>
+          </div>
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <span class="text-slate-500 font-medium">Cell Composition</span>
+            <div class="text-lg font-bold text-slate-800 font-mono mt-0.5">${fmt(r.r_composition)}</div>
+            <span class="text-[10px] text-slate-400">8-type oracle baseline</span>
+          </div>
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <span class="text-slate-500 font-medium">Cell Count</span>
+            <div class="text-lg font-bold text-slate-800 font-mono mt-0.5">${fmt(r.r_ncells)}</div>
+            <span class="text-[10px] text-slate-400">Univariate spot density</span>
+          </div>
+          <div class="p-3 ${r.r_image_minus_composition > 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'} border rounded-lg">
+            <span class="text-slate-500 font-medium">Image − Composition</span>
+            <div class="text-lg font-bold ${r.r_image_minus_composition > 0 ? 'text-emerald-700' : 'text-slate-700'} font-mono mt-0.5">${fmtDiff(r.r_image_minus_composition)}</div>
+            <span class="text-[10px] text-slate-400">Model margin over oracle</span>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 pt-3">
+          <h4 class="text-xs font-bold text-slate-700 mb-2 uppercase tracking-wide">Biological & Context Properties</h4>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-slate-400 block text-[10px]">Top Cell Type</span>
+              <strong class="text-slate-800 font-sans">${r.top_type || 'Unknown'}</strong>
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-slate-400 block text-[10px]">Moran's I (Spatial)</span>
+              <strong class="text-slate-800 font-mono">${fmt(r.morans_i)}</strong>
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-slate-400 block text-[10px]">Tau (Specificity)</span>
+              <strong class="text-slate-800 font-mono">${fmt(r.tau)}</strong>
+            </div>
+            <div class="bg-slate-50 p-2 rounded border border-slate-200">
+              <span class="text-slate-400 block text-[10px]">Context Gain (+k1)</span>
+              <strong class="text-blue-700 font-mono">${fmtDiff(r.gain_virchow2_k1)}</strong>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Table Filtering & Sorting
+    function applyTableFilters() {
+      const data = atlasData[currentTarget];
+      if (!data || data.length === 0) return;
+
+      const preset = document.getElementById('preset-select').value;
+      const celltype = document.getElementById('celltype-select').value;
+      const q = document.getElementById('table-search-input').value.trim().toUpperCase();
+
+      let list = data.slice();
+
+      // Cell type
+      if (celltype !== 'all') {
+        list = list.filter(d => d.top_type === celltype);
+      }
+
+      // Query
+      if (q) {
+        list = list.filter(d => d.gene && d.gene.toUpperCase().includes(q));
+      }
+
+      // Presets
+      if (preset === 'beats_comp') {
+        list = list.filter(d => d.r_image_minus_composition > 0);
+      } else if (preset === 'context_gain') {
+        list = list.filter(d => d.gain_virchow2_k1 > 0);
+      }
+
+      // Sort
+      list.sort((a, b) => {
+        let va = a[currentSortCol];
+        let vb = b[currentSortCol];
+        if (va === null || va === undefined) return 1;
+        if (vb === null || vb === undefined) return -1;
+        if (typeof va === 'string') {
+          return currentSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        }
+        return currentSortAsc ? va - vb : vb - va;
+      });
+
+      filteredTableData = list;
+      currentPage = 1;
+      renderTablePage();
+    }
+
+    function sortTable(col) {
+      if (currentSortCol === col) {
+        currentSortAsc = !currentSortAsc;
+      } else {
+        currentSortCol = col;
+        currentSortAsc = false;
+      }
+
+      // Update header indicators
+      document.querySelectorAll('th.sort-icon').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+      });
+      const th = document.getElementById('th-' + col);
+      if (th) {
+        th.classList.add(currentSortAsc ? 'sort-asc' : 'sort-desc');
+      }
+
+      applyTableFilters();
+    }
+
+    function renderTablePage() {
+      const tbody = document.getElementById('atlas-table-body');
+      const total = filteredTableData.length;
+      const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+
+      document.getElementById('table-stats').textContent = `Showing ${Math.min(total, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(total, currentPage * PAGE_SIZE)} of ${total.toLocaleString()} genes`;
+      document.getElementById('page-indicator').textContent = `Page ${currentPage} / ${totalPages}`;
+      document.getElementById('btn-prev-page').disabled = currentPage <= 1;
+      document.getElementById('btn-next-page').disabled = currentPage >= totalPages;
+
+      if (total === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="p-4 text-center text-slate-400">No genes match the filter criteria.</td></tr>';
+        return;
+      }
+
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const slice = filteredTableData.slice(start, start + PAGE_SIZE);
+
+      const fmt = (v) => (v !== null && v !== undefined && !isNaN(v)) ? Number(v).toFixed(3) : '-';
+      const fmtDiff = (v) => (v !== null && v !== undefined && !isNaN(v)) ? (v > 0 ? '+' : '') + Number(v).toFixed(3) : '-';
+
+      tbody.innerHTML = slice.map(d => `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+          <td class="p-2.5 font-bold text-slate-900 cursor-pointer hover:text-blue-600" onclick="quickSearch('${d.gene}')">${d.gene}</td>
+          <td class="p-2.5 font-bold text-blue-700">${fmt(d.r_virchow2)}</td>
+          <td class="p-2.5">${fmt(d.r_uni2_h)}</td>
+          <td class="p-2.5">${fmt(d.r_conch_v15)}</td>
+          <td class="p-2.5">${fmt(d.r_composition)}</td>
+          <td class="p-2.5">${fmt(d.r_ncells)}</td>
+          <td class="p-2.5 ${d.r_image_minus_composition > 0 ? 'text-emerald-600 font-bold' : 'text-slate-400'}">${fmtDiff(d.r_image_minus_composition)}</td>
+          <td class="p-2.5">${fmt(d.morans_i)}</td>
+          <td class="p-2.5">${fmt(d.tau)}</td>
+          <td class="p-2.5 font-sans">${d.top_type || '-'}</td>
+          <td class="p-2.5 ${d.gain_virchow2_k1 > 0 ? 'text-blue-600 font-semibold' : 'text-slate-400'}">${fmtDiff(d.gain_virchow2_k1)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function prevPage() {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTablePage();
+      }
+    }
+
+    function nextPage() {
+      const totalPages = Math.ceil(filteredTableData.length / PAGE_SIZE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTablePage();
+      }
+    }
+
+    // Plotly Scatter Plot
+    function renderScatterPlot() {
+      const data = atlasData[currentTarget];
+      if (!data || data.length === 0) return;
+
+      const types = [...new Set(data.map(d => d.top_type).filter(Boolean))].sort();
+      const traces = types.map(ct => {
+        const sub = data.filter(d => d.top_type === ct && d.morans_i !== null && d.r_virchow2 !== null);
+        return {
+          name: ct,
+          x: sub.map(d => d.morans_i),
+          y: sub.map(d => d.r_virchow2),
+          text: sub.map(d => `<b>${d.gene}</b><br>Virchow2 r: ${d.r_virchow2?.toFixed(3)}<br>Moran's I: ${d.morans_i?.toFixed(3)}<br>Top Type: ${d.top_type}`),
+          mode: 'markers',
+          type: 'scatter',
+          hoverinfo: 'text',
+          marker: { size: 5, opacity: 0.65 }
+        };
+      });
+
+      const layout = {
+        title: {
+          text: `<b>Predictability (Virchow2) vs Moran's I (${currentTarget})</b>`,
+          font: { size: 14 }
+        },
+        xaxis: {
+          title: "<b>Moran's I (Spatial Autocorrelation)</b>",
+          zeroline: true
+        },
+        yaxis: {
+          title: "<b>Pearson r (Virchow2)</b>",
+          zeroline: true
+        },
+        margin: { l: 60, r: 40, t: 50, b: 60 },
+        legend: { orientation: 'h', y: -0.25 },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('plotly-scatter', traces, layout, { responsive: true, displayModeBar: true });
+    }
+
+    // Start
+    init();
+  </script>
+</body>
+</html>
