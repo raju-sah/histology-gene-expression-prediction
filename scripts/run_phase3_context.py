@@ -96,6 +96,9 @@ def main(argv=None):
         variants += [e] + [f"{e}_k{k}" for k in a.ks]
     gf, sg, _, fi = run_atlas_chunked(samples, folds, variants, groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
                                       y_kind=a.y_kind, block=a.block)
+    del sg, fi
+    import gc
+    gc.collect()
 
     if a.attention_encoder in encs:
         rng = np.random.default_rng(0)

@@ -113,3 +113,28 @@ across chunks/targets/phases; 3.8 GB RSS watchdog. Peak RSS 2.7-2.9 GB. Equivale
 - Coarse marker typing leaves 60-70 % of cells "unassigned" (sparse marker counts on the 5k panel); weakens tau and the
   composition oracle (which scores below cell count under lognorm). Fix needs cell-level matrices -> another Colab pass.
 - Only 5 test groups; CIs are wide.
+
+## Phase 3: Spatial context ablation (done 2026-10-31, tag `phase-3`)
+**Done**
+- `scripts/run_phase3_context.py` run on both `log1p` and `lognorm` targets for Virchow2 (single, k1 ring mean, k2 ring mean, attn_k1 centre-query attention pooling).
+- Peak RSS capped at 3.8 GB via `scripts/run_with_watchdog.sh`; lognorm run completed with `--attention-genes 500` (peak RSS 3.80 GB).
+- All per-gene fold predictions, gene tables, gain summaries, and feature correlations saved to `reports/phase3/log1p/` and `reports/phase3/lognorm/`.
+
+**Key numbers** (Virchow2, 5001 genes [attention on 1000 log1p / 500 lognorm random subset], LOGO over 5 groups)
+| target | single | k1 ring mean | k2 ring mean | attn_k1 |
+|---|---|---|---|---|
+| log1p | 0.510 (sd 0.110) | 0.514 (sd 0.108) | 0.513 (sd 0.108) | 0.485 (sd 0.111) |
+| lognorm | 0.167 (sd 0.042) | 0.178 (sd 0.042) | 0.184 (sd 0.040) | 0.171 (sd 0.035) |
+
+Gains (variant - single):
+- `log1p`: k1 mean gain +0.0038 (median +0.0032); k2 mean gain +0.0031 (median +0.0028); attn_k1 mean gain -0.0269 (median -0.0229).
+- `lognorm`: k1 mean gain +0.0102 (median +0.0087; 101 genes gain > 0.05 all folds, 160 majority); k2 mean gain +0.0162 (median +0.0135; 371 genes gain > 0.05 all folds, 550 majority); attn_k1 mean gain -0.0034 (median -0.0061).
+
+**Findings**
+- Spatial context adds very little under `log1p` (+0.003-0.004), where cell count and local cellularity already dominate the single-patch signal.
+- Under `lognorm`, spatial context provides a modest, consistent gain (+0.010 for k1, +0.016 for k2). Context gains correlate positively with spatial autocorrelation (Moran's I rho 0.42 for k1, 0.57 for k2) and expression level (mean_log1p rho 0.43 for k1, 0.58 for k2), and correlate negatively with marker cell-type specificity (tau rho -0.20 for k1, -0.26 for k2).
+- Attention pooling over the 3x3 neighbourhood does not improve over simple ring averaging or single patches (-0.027 on log1p, -0.003 on lognorm).
+
+**Open issues / limitations**
+- Attention head evaluated on a fixed random subset (1000 genes for log1p, 500 for lognorm) due to CPU/RAM budget.
+- Only Virchow2 evaluated across all context variants; consistent with its top ranking in Phase 2.
