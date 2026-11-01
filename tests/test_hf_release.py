@@ -148,18 +148,13 @@ def test_biorxiv_metadata_abstract_numbers_match_numbers_tex():
     macros = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{([^}]*)\}", text))
     macro_vals = set(macros.values())
 
-    stat_patterns = [
-        r"r=([0-9]+\.[0-9]+)",
-        r"R\^2=([0-9]+\.[0-9]+)",
-        r"([0-9]+\.[0-9]+)\s+unassigned",
-        r"([0-9]+)\s+human tissue samples",
-        r"([0-9]+)\s+leave-one-group-out folds",
-    ]
-    extracted = []
-    for pat in stat_patterns:
-        extracted.extend(re.findall(pat, abstract))
+    # every decimal in the abstract (including negative differences and CI bounds) must come from a macro
+    extracted = re.findall(r"(?<![\w.])-?[0-9]+\.[0-9]+", abstract)   # skips version numbers like v1.5
+    extracted += re.findall(r"([0-9]+)\s+human tissue samples", abstract)
+    extracted += re.findall(r"([0-9]+)\s+leave-one-group-out folds", abstract)
 
     assert len(extracted) >= 8, f"Expected >= 8 statistical values in abstract, found {len(extracted)}"
+    assert "nuclear" not in abstract.lower(), "cell-count baseline comes from Xenium segmentation, not nuclei"
     for val in extracted:
         assert val in macro_vals, (
             f"Value {val} from bioRxiv abstract not found in paper/generated/numbers.tex macros: {macro_vals}"

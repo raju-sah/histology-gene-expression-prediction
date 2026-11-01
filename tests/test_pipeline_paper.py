@@ -12,7 +12,7 @@ def test_all_paper_macros_resolve(tmp_path):
     import analyze_predictability, make_paper_numbers, plot_phase2, run_phase2_atlas, run_phase3_context
     import run_phase4_generalization, run_phase5_robustness
     emb, rep = tmp_path / "emb", tmp_path / "reports"
-    make_fake_phase2(emb, encoders=("uni2_h", "virchow2", "uni2_h_c56"), n_genes=12)
+    make_fake_phase2(emb, encoders=("uni2_h", "virchow2", "conch_v15", "uni2_h_c56"), n_genes=12)
     make_fake_phase2(emb, encoders=("uni2_h", "virchow2"), n_genes=12, dataset="phase4/visium",
                      samples=list(load_config()["visium_organ"]))
     common = ["--root", str(emb), "--no-log", "--block", "6"]

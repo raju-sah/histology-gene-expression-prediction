@@ -84,7 +84,7 @@ def search_gene(gene_symbol: str, target: str) -> str:
 | **UNI2-h** (Image FM) | **`{uni}`** | Mahmood Lab ViT-Giant encoder |
 | **CONCH v1.5** (V-L FM) | **`{conch}`** | Vision-Language pathology model |
 | **Cell Composition** | **`{comp}`** | 8-cell-type reference proportion oracle |
-| **Cell Count Baseline** | **`{ncells}`** | Univariate total nuclear count |
+| **Cell Count Baseline** | **`{ncells}`** | Number of Xenium-segmented cells in the spot (molecular data, not the image) |
 | **Image − Composition** | **`{diff}`** | Foundation model margin over composition |
 
 #### Biological & Context Properties:
