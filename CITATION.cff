@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use this code or the atlas, please cite it as below."
+title: "Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide predictability from H&E"
+type: software
+authors:
+  - family-names: Sah
+    given-names: Raju
+    orcid: "https://orcid.org/0009-0006-0412-6139"
+    affiliation: "Independent Researcher, Kirtipur, Kathmandu, Nepal"
+repository-code: "https://github.com/raju-sah/histology-gene-expression-prediction"
+license: MIT
+version: "1.0.0"
+date-released: "2026-11-02"
+keywords:
+  - spatial transcriptomics
+  - computational pathology
+  - foundation models
+  - Xenium
+  - HEST-1k
+references:
+  - type: dataset
+    title: "HEST Xenium 5K Gene Predictability Atlas"
+    authors:
+      - family-names: Sah
+        given-names: Raju
+    url: "https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas"
+    license: CC-BY-NC-SA-4.0
+  - type: conference-paper
+    title: "HEST-1k: A Dataset for Spatial Transcriptomics and Histology Image Analysis"
+    authors:
+      - family-names: Jaume
+        given-names: Guillaume
+      - name: "et al."
+    collection-title: "Advances in Neural Information Processing Systems"
+    year: 2024

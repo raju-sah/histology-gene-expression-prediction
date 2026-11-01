@@ -4,6 +4,14 @@ Which genes can be predicted from H&E morphology on Xenium 5k data, and what mak
 Frozen embeddings from UNI2-h, Virchow2 and CONCH v1.5 (+ ImageNet ResNet50 baseline), linear / small-MLP heads,
 patient/sample-level splits. See [ROADMAP.md](ROADMAP.md) for the plan and [PROGRESS.md](PROGRESS.md) for status.
 
+**Paper:** *Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide
+predictability from H&E* (Raju Sah, 2026). Preprint submitted to bioRxiv; link to be added. Source in [paper/](paper/).
+
+**Atlas data:** per-gene predictability statistics on Hugging Face,
+[raju-ai/hest-xenium5k-predictability-atlas](https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas).
+
+**Citing:** see [CITATION.cff](CITATION.cff) (GitHub's "Cite this repository" button).
+
 ## Layout
 ```
 src/hestfm/    library code (data loading, splits, heads, metrics, pseudo-spots, analysis)
@@ -24,6 +32,9 @@ VIRTUAL_ENV=.venv uv pip install -r requirements.txt --index-strategy unsafe-bes
 ```
 
 ## Data and licenses
+Code in this repository: [MIT](LICENSE). The derived results in `reports/` and the atlas dataset inherit the
+HEST-1k licence (CC BY-NC-SA 4.0, non-commercial).
+
 HEST-1k and HEST-Benchmark (Jaume et al., NeurIPS 2024; CC BY-NC-SA 4.0). Non-commercial research use only.
 Model licenses are listed in [LICENSES.md](LICENSES.md). No model weights (original or fine-tuned) are stored or published here.
 Whole-slide images and raw HEST samples are never downloaded locally; heavy processing happens in Colab.
