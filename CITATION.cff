@@ -18,7 +18,7 @@ keywords:
   - Xenium
   - HEST-1k
 references:
-  - type: dataset
+  - type: data
     title: "HEST Xenium 5K Gene Predictability Atlas"
     authors:
       - family-names: Sah
