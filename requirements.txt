@@ -18,3 +18,5 @@ statsmodels>=0.14
 pytest>=8
 nbformat>=5.9
 tabulate
+igraph>=1.0
+leidenalg>=0.12

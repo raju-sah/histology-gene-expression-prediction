@@ -216,3 +216,17 @@ Per-sample performance and drop vs Xenium LOGO:
   - Field of view (UNI2-h, `lognorm`): 112 um -> 0.148 [0.127, 0.171] vs central 56 um -> 0.117 [0.098, 0.138].
   - Labeled all Phase 5 values in `paper/main.tex` with their respective target (`log1p` vs `lognorm`).
 - Recompiled `paper/main.pdf` via Tectonic with zero `\pending` placeholders. All 55 unit tests pass.
+
+## Preprint Preparation (2026-11-01)
+
+### Step 1: More data (done 2026-11-01)
+- **Sample audit**: Scanned HEST v1.3.0 metadata for unused human Xenium 5k/Prime samples. Identified:
+  - `TENX158`: Skin Melanoma, 2,179 spots, 10,017 genes (FFPE).
+  - `TENX157`: Prostate PRAD, 3,707 spots, 10,006 genes (FFPE).
+  - `TENX143`: Lymphoid reactive lymph node, 4,210 spots, 11,094 genes (FFPE).
+  - Excluded: `TENX190` (Xenium v1, 541 genes), `TENX159` (Mouse brain).
+- **Colab balance**: 7.12 CU at start; 5.45 CU after runs (total 1.67 CU consumed). Colab VM session cleanly terminated.
+- **Extraction**: Modified `data/phase2_cli.py` to inline per-cell sparse CSR expression matrices (`cell_counts_csr`, `cell_centroids`) directly into `cells/{sid}.h5` (~1,013,471 cells across the 3 samples). Embeddings extracted for `uni2_h`, `virchow2`, `conch_v15`, `uni2_h_c56` (and `hoptimus1` where available) with micro_batch=64, chunk=128 on NVIDIA L4 GPU.
+- **Local synchronization**: All 8 subdirectories (`uni2_h`, `virchow2`, `conch_v15`, `uni2_h_c56`, `expression`, `expression_w050`, `expression_w200`, `cells`) downloaded and verified locally.
+- **Config & splits**: Added 3 new samples to `configs/project.yaml`, expanding the atlas from 6 samples / 5 groups / 3 organs to 9 samples / 8 groups / 6 organs (`lung`, `ovary`, `cervix`, `skin`, `prostate`, `lymph_node`). Common gene union across all 9 samples is 4,624 genes.
+- **Testing**: Updated `tests/test_config.py` and `tests/test_splits.py` to validate 9 samples and 8 LOGO folds. All tests pass.

@@ -11,7 +11,7 @@ from hestfm.splits import (Fold, LeakageError, assert_no_leakage, assert_spot_di
 def test_logo_groups_never_cross():
     groups = load_config()["xenium5k_samples"]
     folds = leave_one_group_out(groups)
-    assert len(folds) == 5
+    assert len(folds) == len(set(groups.values()))
     assert_no_leakage(folds, groups)
     for f in folds:
         assert {groups[s] for s in f.test}.isdisjoint({groups[s] for s in f.train})

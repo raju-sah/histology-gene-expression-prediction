@@ -14,6 +14,9 @@ xenium5k_samples:
   TENX188: cervix_10x
   NCBI887: lung_tma_pdl
   NCBI888: lung_tma_pdl
+  TENX158: skin_melanoma_10x
+  TENX157: prostate_prad_10x
+  TENX143: lymphoid_reactive_10x
 excluded_samples:
   TENX190: "labelled Xenium 5k in HEST v1.3.0 but is the Xenium v1 run (541 genes) of the TENX189 block"
 patch:
@@ -28,6 +31,9 @@ xenium5k_organ:
   TENX160: ovary
   TENX187: ovary
   TENX188: cervix
+  TENX158: skin
+  TENX157: prostate
+  TENX143: lymph_node
 # Phase 4 cross-platform training sets (HEST Visium, human). Assumed to be different donors from the Xenium
 # samples (different studies / 10x datasets); no shared patient IDs exist in HEST metadata.
 visium_organ:
