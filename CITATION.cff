@@ -7,6 +7,7 @@ authors:
     given-names: Raju
     orcid: "https://orcid.org/0009-0006-0412-6139"
     affiliation: "Independent Researcher, Kirtipur, Kathmandu, Nepal"
+doi: "10.5281/zenodo.23864896"
 repository-code: "https://github.com/raju-sah/histology-gene-expression-prediction"
 license: MIT
 version: "1.0.0"
