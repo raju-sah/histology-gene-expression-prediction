@@ -7,6 +7,7 @@ Verifies:
 - Per-gene table row counts match \AtlasNGenes (5,001) from paper/generated/numbers.tex.
 - Space app callbacks and figures exist and operate correctly.
 """
+import json
 from pathlib import Path
 import re
 import pandas as pd
@@ -135,4 +136,33 @@ def test_static_space_index_html():
     assert "data/atlas_lognorm.csv" in content
     assert "data/context_gain_lognorm.csv" in content
     assert "figures/lognorm/" in content
+
+
+def test_biorxiv_metadata_abstract_numbers_match_numbers_tex():
+    biorxiv_meta = ROOT / "release" / "biorxiv" / "metadata.json"
+    assert biorxiv_meta.exists(), "release/biorxiv/metadata.json does not exist"
+    data = json.loads(biorxiv_meta.read_text())
+    abstract = data["abstract"]
+
+    text = NUMBERS_TEX.read_text()
+    macros = dict(re.findall(r"\\newcommand\{\\(\w+)\}\{([^}]*)\}", text))
+    macro_vals = set(macros.values())
+
+    stat_patterns = [
+        r"r=([0-9]+\.[0-9]+)",
+        r"R\^2=([0-9]+\.[0-9]+)",
+        r"([0-9]+\.[0-9]+)\s+unassigned",
+        r"([0-9]+)\s+human tissue samples",
+        r"([0-9]+)\s+leave-one-group-out folds",
+    ]
+    extracted = []
+    for pat in stat_patterns:
+        extracted.extend(re.findall(pat, abstract))
+
+    assert len(extracted) >= 8, f"Expected >= 8 statistical values in abstract, found {len(extracted)}"
+    for val in extracted:
+        assert val in macro_vals, (
+            f"Value {val} from bioRxiv abstract not found in paper/generated/numbers.tex macros: {macro_vals}"
+        )
+
 

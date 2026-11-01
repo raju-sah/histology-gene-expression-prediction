@@ -91,6 +91,9 @@ def run_atlas_chunked(samples, folds, encoders, groups, root, dataset, genes, ch
     kw["fit_cache"] = fit_cache
     parts, extra_parts, info = ([], [], []), [], None
     for c0 in range(0, len(genes), chunk):
+        free_bytes = shutil.disk_usage(root).free
+        if free_bytes < 5 * 1024**3:
+            raise RuntimeError(f"DISK GUARD: free disk {free_bytes / 1024**3:.2f} GiB is below 5.0 GiB limit. Stopping cleanly.")
         g = list(genes[c0:c0 + chunk])
         for s, v in samples.items():   # `dataset` may map sample -> dataset (e.g. Xenium + Visium in Phase 4)
             v.Y = load_y(root, dataset[s] if isinstance(dataset, dict) else dataset, s, g, v.barcodes, subdir)

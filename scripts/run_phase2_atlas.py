@@ -108,6 +108,10 @@ def main(argv=None):
         bl = {
             "composition": lambda s: np.log1p(s.extra["composition"].astype(np.float32)),
             "ncells": lambda s: np.log1p(s.extra["n_cells"].astype(np.float32))[:, None],
+            "composition_ncells": lambda s: np.column_stack([
+                np.log1p(s.extra["composition"].astype(np.float32)),
+                np.log1p(s.extra["n_cells"].astype(np.float32)),
+            ]),
         }
         for name, fn in bl.items():
             g2, s2, _, f2 = run_atlas_chunked(samples, folds, [], groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
@@ -144,10 +148,63 @@ def main(argv=None):
         table["r_best_encoder"] = table[rcols].max(1)
         table["r_encoder_sd"] = table[rcols].std(1)
         table["r_image_minus_composition"] = table[rcols].mean(1) - table["r_composition"]
+        table["r_image_minus_ncells"] = table[rcols].mean(1) - table["r_ncells"]
+        table["r_image_minus_comb"] = table[rcols].mean(1) - table["r_composition_ncells"]
         table.sort_values(rcols[0], ascending=False).to_csv(out / "gene_table.csv")
         prof.to_csv(out / "celltype_profiles.csv")
 
-        summ = [summarize(gf, sg, genes, m) for m in encs + ["composition", "ncells"]]
+        # Step 3: Per-group performance table
+        organs = load_config().get("xenium5k_organ", {})
+        group_rows = []
+        for fold in folds:
+            test_sample = fold.test[0] if fold.test else ""
+            organ = organs.get(test_sample, fold.name.replace("logo_", ""))
+            row = {"fold": fold.name, "test_group": fold.meta["test_group"], "organ": organ}
+            for m in encs + ["composition", "ncells", "composition_ncells"]:
+                sub_gf = gf[(gf.fold == fold.name) & (gf.encoder == m)]
+                row[f"r_{m}"] = float(sub_gf.pearson.mean()) if len(sub_gf) else np.nan
+            group_rows.append(row)
+        pg_df = pd.DataFrame(group_rows)
+        pg_df.to_csv(out / "per_group_summary.csv", index=False)
+
+        # Step 3: Paired statistics (Wilcoxon over genes, group bootstrap, win rate)
+        from scipy.stats import wilcoxon
+        paired_rows = []
+        baselines = ["ncells", "composition", "composition_ncells"]
+        for enc in encs:
+            enc_gf = gf[gf.encoder == enc].groupby(["fold", "gene"])["pearson"].mean().unstack("fold")
+            for b in baselines:
+                base_gf = gf[gf.encoder == b].groupby(["fold", "gene"])["pearson"].mean().unstack("fold")
+                common_idx = enc_gf.index.intersection(base_gf.index)
+                rg_enc = enc_gf.loc[common_idx].mean(1)
+                rg_base = base_gf.loc[common_idx].mean(1)
+                diff_g = rg_enc - rg_base
+                diff_clean = diff_g.dropna()
+
+                try:
+                    w_res = wilcoxon(rg_enc.loc[diff_clean.index], rg_base.loc[diff_clean.index])
+                    w_stat, w_p = float(w_res.statistic), float(w_res.pvalue)
+                except Exception:
+                    w_stat, w_p = np.nan, np.nan
+
+                fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+                rng = np.random.default_rng(0)
+                b_diffs = [rng.choice(fold_diffs, size=len(fold_diffs), replace=True).mean() for _ in range(2000)]
+                ci_lo, ci_hi = float(np.percentile(b_diffs, 2.5)), float(np.percentile(b_diffs, 97.5))
+
+                paired_rows.append({
+                    "encoder": enc, "baseline": b,
+                    "mean_diff": float(diff_clean.mean()),
+                    "ci_lo": ci_lo, "ci_hi": ci_hi,
+                    "wilcoxon_stat": w_stat, "wilcoxon_p": w_p,
+                    "frac_win": float((diff_clean > 0).mean()),
+                    "frac_win_gt_0_05": float((diff_clean > 0.05).mean()),
+                    "n_genes": len(diff_clean),
+                })
+        paired_df = pd.DataFrame(paired_rows)
+        paired_df.to_csv(out / "paired_stats.csv", index=False)
+
+        summ = [summarize(gf, sg, genes, m) for m in encs + ["composition", "ncells", "composition_ncells"]]
         summ = pd.DataFrame(summ).assign(y_kind=yk, null_permuted_r=null_r)
         summ.to_csv(out / "summary.csv", index=False)
         all_summ.append(summ)
@@ -159,7 +216,7 @@ def main(argv=None):
             if r.pearson_mean > TOO_GOOD:
                 flags.append(f"{yk}/{r.model}: mean r {r.pearson_mean:.3f} implausibly high -> investigate leakage")
             if not a.no_log:
-                log_experiment(r.model, "xenium5k_atlas", "logo_5groups", "ridge_pergene_alpha_pca256", "pearson_mean",
+                log_experiment(r.model, "xenium5k_atlas", f"logo_{len(folds)}groups", "ridge_pergene_alpha_pca256", "pearson_mean",
                                r.pearson_mean, n_test=int(fi[fi.encoder == r.model].n_test.sum()),
                                notes=f"y={yk};genes={len(genes)};ci95=[{r.ci_lo:.3f},{r.ci_hi:.3f}];null={null_r:.3f}")
     json.dump({"flags": flags, "samples": present, "encoders": encs, "n_genes": len(genes)},

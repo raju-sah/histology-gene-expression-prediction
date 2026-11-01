@@ -1,0 +1,33 @@
+Samples with full per-cell data: ['TENX158', 'TENX157', 'TENX143']
+Common genes across cell samples: 4624
+
+--- Fitting unsupervised clustering for logo_lymphoid_reactive_10x (train: ('TENX158', 'TENX157'), test: ('TENX143',)) ---
+[logo_lymphoid_reactive_10x] Discovered 17 clusters. Top marker preview: cluster 0 -> [np.str_('S100A1'), np.str_('FBL'), np.str_('ATP1A1')]
+
+--- Fitting unsupervised clustering for logo_prostate_prad_10x (train: ('TENX158', 'TENX143'), test: ('TENX157',)) ---
+[logo_prostate_prad_10x] Discovered 14 clusters. Top marker preview: cluster 0 -> [np.str_('CD3E'), np.str_('EEF1G'), np.str_('CXCR4')]
+
+--- Fitting unsupervised clustering for logo_skin_melanoma_10x (train: ('TENX157', 'TENX143'), test: ('TENX158',)) ---
+[logo_skin_melanoma_10x] Discovered 12 clusters. Top marker preview: cluster 0 -> [np.str_('CD3E'), np.str_('EEF1G'), np.str_('CXCR4')]
+
+=== Evaluating Target: log1p ===
+  logo_lymphoid_reactive_10x (log1p): Cluster-Comp r=0.5447 | Coarse-Comp r=0.6830 | n_cells r=0.7085
+  logo_prostate_prad_10x (log1p): Cluster-Comp r=0.3534 | Coarse-Comp r=0.3809 | n_cells r=0.3698
+  logo_skin_melanoma_10x (log1p): Cluster-Comp r=0.1725 | Coarse-Comp r=0.2789 | n_cells r=0.3039
+
+=== Evaluating Target: lognorm ===
+  logo_lymphoid_reactive_10x (lognorm): Cluster-Comp r=0.3271 | Coarse-Comp r=0.3590 | n_cells r=0.3796
+  logo_prostate_prad_10x (lognorm): Cluster-Comp r=0.1556 | Coarse-Comp r=0.1721 | n_cells r=0.1695
+  logo_skin_melanoma_10x (lognorm): Cluster-Comp r=0.1378 | Coarse-Comp r=0.1986 | n_cells r=0.1193
+
+Saved Step 2 clustering baseline results to /home/raju/AI-ML Projects/histology-gene-expression-prediction/reports/phase2/clustering_baseline.csv
+
+=== Summary Table ===
+        r_cluster_composition           r_coarse_composition            r_ncells          
+                         mean       std                 mean       std      mean       std
+y_kind                                                                                    
+log1p                 0.35687  0.186140             0.447613  0.210163  0.460734  0.217096
+lognorm               0.20684  0.104543             0.243261  0.101106  0.222792  0.138126
+
+Unassigned cell fraction: Coarse marker = 72.3%, Unsupervised clustering = 0.0%
+EXIT 0 PEAK_RSS_KB 2326468

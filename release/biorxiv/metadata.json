@@ -1,0 +1,23 @@
+{
+  "title": "Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide predictability from H&E",
+  "authors": [
+    {
+      "name": "Author Placeholder",
+      "affiliation": "Department of Biomedical Engineering / Computer Science",
+      "email": "author@placeholder.edu",
+      "corresponding": true
+    }
+  ],
+  "abstract": "Predicting spatial transcriptomic profiles directly from routine hematoxylin and eosin (H&E) histology images is widely pursued to augment morphological pathology with molecular measurements. However, prevailing benchmarks evaluate models on un-normalised count targets (log(1+count)) and restricted gene panels, potentially obscuring non-transcriptional confounds. Here, we present a systematic predictability atlas across ~5,000 genes measured by Xenium Prime 5K on 9 human tissue samples spanning six organ sites (lung, ovary, cervix, skin, prostate, lymph node) and 8 leave-one-group-out folds. On raw counts, state-of-the-art pathology foundation models (Virchow2, UNI2-h, CONCH v1.5) achieve gene-averaged Pearson correlations up to r=0.519, closely matched by a scalar nuclear count alone (r=0.445) and broad lineage composition (r=0.490). Crucially, upon standard library-size normalisation (lognorm), predictive performance collapses to r=0.193 (Virchow2) and r=0.148 (UNI2-h), failing to exceed trivial cell counts (r=0.214) or data-driven unsupervised single-cell cluster composition (r=0.207, 0.000 unassigned cells). Spot cellularity accounts for R^2=0.953 of cross-gene variance on raw counts, whereas residual predictability on normalised targets is driven primarily by cell-type specificity and cross-encoder agreement (R^2=0.610). Our findings indicate that apparent high predictability from histology images largely reflects local cellularity estimation rather than de novo prediction of intrinsic transcriptional regulation.",
+  "subject_area": "Bioinformatics",
+  "license": "CC-BY-NC-SA 4.0",
+  "keywords": [
+    "spatial transcriptomics",
+    "computational pathology",
+    "foundation models",
+    "cellularity confound",
+    "Xenium Prime 5K",
+    "HEST-1k",
+    "benchmarking"
+  ]
+}

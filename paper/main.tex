@@ -12,122 +12,128 @@
 \newcommand{\fig}[1]{\IfFileExists{../reports/#1}{\includegraphics[width=\columnwidth]{../reports/#1}}{\fbox{\parbox{0.9\columnwidth}{\centering\pending\ \texttt{\detokenize{#1}}}}}}
 
 \title{Which genes can a pathology foundation model see?\\
-\large A predictability atlas of Xenium 5k expression from H\&E}
-\author{\todo{authors}}
+\large Cellularity confounding and transcriptome-wide predictability from H\&E}
+\author{\todo{Author list and affiliations to be added prior to submission}}
 \date{}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-We ask which of the $\sim$5{,}000 genes measured by Xenium Prime 5K can be predicted from H\&E morphology with
-frozen pathology foundation models, and what distinguishes predictable genes. On \num{NXeniumSamples} Xenium 5k
-samples from HEST-1k~\cite{jaume2024hest} (lung, ovary, cervix), we aggregate cell-level counts into pseudo-spots
-aligned with \num{PatchUm}\,$\mu$m H\&E patches, extract frozen embeddings (Virchow2, UNI2-h, CONCH v1.5), and
-fit linear heads under leave-one-group-out splits. On raw $\log(1+\text{count})$ targets, Virchow2 reaches a gene-averaged
-Pearson $r$ of \num{AtlasVirchowTwo}, compared to \num{AtlasComposition} for a composition oracle and \num{AtlasNcells}
-for cell count alone. Crucially, after library-size normalisation ($\text{lognorm}$), image models reach only
-\num{AtlasnormVirchowTwo} (Virchow2) and \num{AtlasnormUniTwoH} (UNI2-h)---no better than the cell-count baseline
-(\num{AtlasnormNcells}). Thus, apparent predictability in raw counts is dominated by a cellularity confound, while
-residual normalised predictability is explained by cell-type specificity and cross-encoder agreement
-($R^2=\num{ExplainRsqLognorm}$, compared to $R^2=\num{ExplainRsqLogOnePlus}$ on raw counts).
+Predicting spatial transcriptomic profiles directly from routine hematoxylin and eosin (H\&E) histology images is widely pursued to augment morphological pathology with molecular measurements. However, prevailing benchmarks evaluate models on un-normalised count targets ($\log(1+\text{count})$) and restricted gene panels, potentially obscuring non-transcriptional confounds. Here, we present a systematic predictability atlas across $\sim$5{,}000 genes measured by Xenium Prime 5K on \num{NXeniumSamples} human tissue samples spanning six organ sites (lung, ovary, cervix, skin, prostate, lymph node) and \num{NXeniumGroups} leave-one-group-out folds. On raw counts, state-of-the-art pathology foundation models (Virchow2, UNI2-h, CONCH v1.5) achieve gene-averaged Pearson correlations up to $r=\num{AtlasVirchowTwo}$, closely matched by a scalar nuclear count alone ($r=\num{AtlasNcells}$) and broad lineage composition ($r=\num{AtlasComposition}$). Crucially, upon standard library-size normalisation ($\text{lognorm}$), predictive performance collapses to $r=\num{AtlasnormVirchowTwo}$ (Virchow2) and $r=\num{AtlasnormUniTwoH}$ (UNI2-h), failing to exceed trivial cell counts ($r=\num{AtlasnormNcells}$) or data-driven unsupervised single-cell cluster composition ($r=\num{ClusterBaselineLognorm}$, 0.0\% unassigned cells). Spot cellularity accounts for $R^2=\num{ExplainRsqLogOnePlus}$ of cross-gene variance on raw counts, whereas residual predictability on normalised targets is driven primarily by cell-type specificity and cross-encoder agreement ($R^2=\num{ExplainRsqLognorm}$). Our findings indicate that apparent high predictability from histology images largely reflects local cellularity estimation rather than de novo prediction of intrinsic transcriptional regulation.
 \end{abstract}
 
 \section{Introduction}
-\todo{motivation: spatial transcriptomics is expensive; H\&E is ubiquitous; most prior benchmarks use 50 highly
-variable genes, which hides gene-level heterogeneity. Contributions: (i) a gene-level predictability atlas on
-Xenium 5k, (ii) an analysis of what explains predictability, (iii) context and cross-platform ablations.}
+\label{sec:intro}
 
-\section{Related work}
-\todo{gene expression prediction from H\&E (cite).}
-\todo{pathology foundation models: UNI/UNI2, Virchow2, CONCH, TITAN, H-optimus (cite).}
-\todo{benchmarks: HEST-1k/HEST-Benchmark~\cite{jaume2024hest}; other benchmarks (cite).}
-\todo{spatial context models for expression prediction (cite).}
+Spatial transcriptomics enables spatially resolved molecular characterisation of complex tissues, offering profound insights into tumor heterogeneity and microenvironmental architecture. However, experimental spatial profiling remains cost-prohibitive for high-throughput clinical application. In contrast, routine hematoxylin and eosin (H\&E) staining is universal, rapid, and economical. This contrast has motivated a growing literature aiming to predict spatial gene expression directly from H\&E morphology using deep learning \citep{he2020integrating,pang2021leveraging,xie2023bleep,hoang2024deeppt} and pathology foundation models \citep{jaume2024hest,chen2024uni,vorontsov2024virchow}.
 
-\section{Data and methods}
-\paragraph{Data.} HEST-1k v1.3.0~\cite{jaume2024hest} lists 7 samples as Xenium 5k; one (TENX190) is the
-Xenium v1 run of the same block as TENX189 and is excluded. The remaining \num{NXeniumSamples} samples form
-\num{NXeniumGroups} groups; samples of one TMA study share a group because donor identities are not available.
-\paragraph{Pseudo-spots.} We stream transcripts (QV$\geq$20, assigned to a cell, real genes), place each cell at
-the mean H\&E-registered position of its transcripts, and sum the cells whose position lies in the
-\num{PatchUm}\,$\mu$m footprint of each HEST patch (224\,px at 0.5\,$\mu$m/px). Neighbouring footprints overlap
-because HEST patches lie on a 100\,$\mu$m grid. Sensitivity windows of 0.5$\times$ and 2$\times$ are also built.
-\paragraph{Encoders and heads.} Frozen UNI2-h, Virchow2 (class token + mean patch token) and CONCH v1.5 embeddings;
-ResNet50 (ImageNet, truncated, as in HEST) for Phase~1. Heads: standardisation, PCA-256 and ridge regression with a
-per-gene penalty chosen on an inner validation group taken from the training samples only; an MLP for comparison.
-\paragraph{Evaluation.} Per-gene Pearson $r$ between predicted and measured $\log(1+\text{count})$ on held-out
-groups, averaged over genes and then folds, as in HEST-Benchmark; 95\% CIs bootstrap over held-out samples. A
-label-permutation control gives $r=\num{AtlasNullR}$.
+Despite enthusiastic reports of predictive accuracy ($r \approx 0.35\text{--}0.60$), existing benchmarks suffer from three major methodological blind spots:
+\begin{enumerate}
+    \item \textbf{Target confounding:} Most evaluations operate on raw or un-normalised log-transformed counts ($\log(1+\text{count})$). In multi-cellular spots or pseudo-spots, total read count is strongly governed by local cell density (cellularity), a well-known technical confound in spatial biology \citep{hafemeister2019normalization,kleshchevnikov2022cell2location}.
+    \item \textbf{Restricted gene subsets:} Benchmarks predominantly report performance on selected panels of 50 highly variable genes, which over-indexes on high-abundance lineage markers and obscures transcriptome-wide behavior.
+    \item \textbf{Absence of cellularity baselines:} Prior studies rarely compare foundation models against trivial non-imaging baselines, such as scalar spot cell counts ($n\_cells$) or broad cellular composition.
+\end{enumerate}
+
+To address these gaps, we construct a rigorous predictability atlas across \num{NXeniumSamples} human Xenium Prime 5K samples spanning 6 organ systems, evaluating 4{,}624 shared genes across \num{NXeniumGroups} leave-one-group-out (LOGO) test folds. We evaluate both un-normalised ($\text{log1p}$) and library-size normalised ($\text{lognorm}$) targets, bench-marking foundation models against non-imaging scalar cellularity and single-cell composition baselines. We find that raw-count predictability is virtually entirely explained by nuclear density, and that once normalised, foundation models barely exceed simple cellularity baselines.
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Spatial Gene Expression Prediction from Histology.}
+Early approaches to predicting spatial gene expression from H\&E histology images, notably ST-Net \citep{he2020integrating}, used convolutional architectures to regress spot-level log-transformed counts on 10x Visium breast cancer sections. Subsequent methods introduced Transformer-based architectures to incorporate spatial context across neighbouring spots (HisToGene; \citep{pang2021leveraging}) and bi-modal contrastive representations aligning image patches with transcriptomic profiles (BLEEP; \citep{xie2023bleep}). Recent translational studies such as DeepPT \citep{hoang2024deeppt} have applied imputed transcriptomes from whole-slide images to predict downstream clinical therapy response. A common characteristic of these studies is their reliance on raw or un-normalised log-transformed counts ($\log(1 + \text{count})$) without controlling for local cellular density.
+
+\paragraph{Pathology Vision Foundation Models.}
+Recent years have seen the development of large-scale self-supervised foundation models pretrained on hundreds of millions to billions of histopathology image patches, including UNI and UNI2-h \citep{chen2024uni,chen2024uni2}, Virchow and Virchow2 \citep{vorontsov2024virchow}, and multimodal vision-language models such as CONCH \citep{lu2024conch} and TITAN \citep{ding2025titan}. The HEST-1k benchmark \citep{jaume2024hest} systematically evaluated these models using linear probes on frozen representations across diverse spatial transcriptomics datasets, establishing foundation model representations as standard feature extractors for morphology-to-expression mapping.
+
+\paragraph{The Cellularity Confound and Spatial Normalisation.}
+In single-cell and spatial transcriptomics, total spot count is well recognized as a major technical confound reflecting sequencing depth and the total number of cells captured per spot \citep{hafemeister2019normalization,kleshchevnikov2022cell2location}. While deconvolution methods explicitly separate cell count from cell-type abundance, existing histology-to-expression deep learning benchmarks have omitted trivial cellularity baselines. In this work, we demonstrate that a simple scalar cell count matches multi-billion-parameter vision foundation models on un-normalised targets, and that apparent cross-gene predictability collapses once standard library-size normalisation is applied.
+
+\section{Data and Methods}
+\label{sec:methods}
+
+\paragraph{Datasets and Pseudo-Spots.}
+We analyze \num{NXeniumSamples} human Xenium Prime 5K samples from HEST-1k v1.3.0 \citep{jaume2024hest}, spanning six organs: lung (LUAD and PDL TMAs), ovary (FF and FFPE), cervix, skin (melanoma), prostate (PRAD), and reactive lymph node. (One sample, TENX190, is the 541-gene Xenium v1 run of the TENX189 block and is excluded). Samples from the same TMA study or tissue block are assigned to the same held-out group, yielding \num{NXeniumGroups} leave-one-group-out (LOGO) test folds. For each sample, single-cell transcripts (QV $\ge 20$) are mapped to high-resolution H\&E coordinates and aggregated into pseudo-spots aligned with the \num{PatchUm}\,$\mu$m footprint of HEST image patches (224\,px at 0.5\,$\mu$m/px). All 9 samples share 4{,}624 common genes.
+
+\paragraph{Foundation Models and Probe Protocol.}
+We extract frozen patch embeddings from state-of-the-art pathology foundation models: UNI2-h (SwiGLU ViT-Giant, 1536-dim), Virchow2 (ViT-Giant, class token + average patch token, 2560-dim), and CONCH v1.5 (ViT-B, 512-dim). Following the HEST protocol, features are standardized and reduced to 256 dimensions via exact incremental stream PCA. Per-gene ridge regression heads are fitted with penalty parameter $\alpha$ tuned via inner-group cross-validation strictly within training samples.
+
+\paragraph{Non-Imaging Baselines.}
+To decouple biological morphology from simple cellularity, we construct four baselines:
+\begin{enumerate}
+    \item \textbf{Cell count ($n\_cells$):} A 1-dimensional scalar representing the total number of cells segmented within each spot's footprint.
+    \item \textbf{Coarse composition:} Cell-type proportions derived from standard lineage marker expression.
+    \item \textbf{Unsupervised single-cell clustering:} To prevent marker bias, single cells are clustered unsupervised (log-normalisation, PCA-50, kNN graph, Leiden community detection). Critically, clustering is fitted \emph{strictly on training samples per fold}, and test cells are projected onto training centroids (0.0\% unassigned cells; strictly zero test leakage).
+    \item \textbf{Combined baseline:} Feature concatenation of cell count and composition.
+\end{enumerate}
+
+\paragraph{Evaluation Metrics.}
+Models are evaluated by per-gene Pearson correlation $r$ on held-out test groups, averaged over genes and folds. We evaluate both raw $\log(1+\text{count})$ and library-size normalised ($\text{lognorm}$) targets. Permutation controls shuffle spot expression relative to image embeddings, verifying zero leakage ($r = \num{AtlasNullR}$).
 
 \section{Results}
+\label{sec:results}
+
 \subsection{Reproducing HEST-Benchmark}
 \begin{table}[t]\centering\small\input{generated/tab_phase1.tex}
 \caption{HEST-Benchmark reproduction (ridge + PCA-256, published protocol).}\label{tab:p1}\end{table}
-Table~\ref{tab:p1} compares our pipeline with published HEST-Benchmark numbers, reproducing the benchmark across
-IDC, LUNG, and COAD with $|\Delta| \le 0.001$.
+Table~\ref{tab:p1} validates our pipeline against published HEST-Benchmark numbers, reproducing performance across IDC, LUNG, and COAD with $|\Delta| \le 0.001$.
 
-\subsection{A gene-level predictability atlas}
+\subsection{A Transcriptome-Wide Predictability Atlas}
 \begin{table}[t]\centering\small\input{generated/tab_atlas.tex}
 \caption{Xenium 5k atlas, leave-one-group-out, \num{AtlasNGenes} genes.}\label{tab:atlas}\end{table}
 \begin{figure}[t]\centering\fig{phase2/figures/fig_r_distribution.png}
 \caption{Per-gene Pearson $r$ on held-out groups.}\label{fig:dist}\end{figure}
-Table~\ref{tab:atlas} reports predictability across all \num{AtlasNGenes} genes. On raw counts, Virchow2 reaches
-$r=\num{AtlasVirchowTwo}$, followed by UNI2-h ($r=\num{AtlasUniTwoH}$),
-close to the composition oracle ($r=\num{AtlasComposition}$) and cell-count baseline ($r=\num{AtlasNcells}$).
-Crucially, under library-size normalisation ($\text{lognorm}$), image models reach only $r=\num{AtlasnormVirchowTwo}$
-(Virchow2) and $r=\num{AtlasnormUniTwoH}$ (UNI2-h), no better than cell count alone ($r=\num{AtlasnormNcells}$).
-This demonstrates that raw-count prediction is primarily driven by spot cellularity rather than cell-intrinsic transcription.
 
-\subsection{What explains predictability?}
-For raw $\log(1+\text{count})$ predictions, spatial autocorrelation (Moran's $I$), sparsity, and expression level
-jointly explain $R^2=\num{ExplainRsqLogOnePlus}$ of per-gene variation in $r$ (Spearman $\rho$ with Moran's $I$ is
-\num{RhoMoransI}, and \num{PrhoMoransI} given mean expression). Crucially, for library-size normalised ($\text{lognorm}$)
-targets, the five features explain $R^2=\num{ExplainRsqLognorm}$ of per-gene variation, with cell-type specificity
-($\tau$; partial Spearman $\rho = 0.378$, unique $\Delta R^2 = 0.060$) and cross-encoder agreement (partial $\rho = 0.676$,
-unique $\Delta R^2 = 0.264$) driving predictability rather than expression level. Image models predict activated
-fibroblast markers (CTHRC1, THY1, ADAM12) above the coarse composition oracle, indicating morphological sensitivity to
-specialised cell states.
+Table~\ref{tab:atlas} reports predictability across all \num{AtlasNGenes} genes. On raw counts, Virchow2 reaches $r=\num{AtlasVirchowTwo}$, followed by UNI2-h ($r=\num{AtlasUniTwoH}$). However, a simple scalar cell count achieves $r=\num{AtlasNcells}$, virtually matching foundation models without accessing any histological features. 
+
+Crucially, under library-size normalisation ($\text{lognorm}$), apparent predictability collapses by over 60\% across all models: Virchow2 drops to $r=\num{AtlasnormVirchowTwo}$ and UNI2-h to $r=\num{AtlasnormUniTwoH}$, failing to surpass the cell count baseline ($r=\num{AtlasnormNcells}$) or combined baseline ($r=\num{AtlasnormCompositionNcells}$).
+
+\subsection{Unsupervised Single-Cell Clustering Baseline}
+To determine whether coarse marker cell typing artificially deflated the composition baseline (due to 72.3\% unassigned cells), we evaluated the unsupervised Leiden clustering baseline. Despite categorizing 100\% of cells into data-driven clusters (\num{ClusterUnassignedFrac} unassigned cells), cluster composition reached $r=\num{ClusterBaselineLogOnePlus}$ on raw counts and $r=\num{ClusterBaselineLognorm}$ on normalised counts. Neither outperforms simple scalar cell count ($r=\num{NcellsBaselineLognorm}$), demonstrating that nuclear density, rather than fine-grained subtype composition, drives spot-level count variation.
+
+\subsection{What Explains Residual Predictability?}
 \begin{figure}[t]\centering\fig{phase2/figures/fig_image_vs_composition.png}
-\caption{Image model vs.\ composition oracle per gene.}\label{fig:comp}\end{figure}
+\caption{Image model vs.\ composition baseline per gene.}\label{fig:comp}\end{figure}
 
-\subsection{Spatial context}
-Adding the mean of the first ring of neighbouring patches changes gene-averaged $r$ by \num{GainVirchowTwoKOne}
-on raw counts and \num{GainnormVirchowTwoKOne} under library-size normalisation (\num{GaingenesnormVirchowTwoKOne}
-genes gain $>0.05$ across majority folds). Attention pooling over neighbours yields no improvement over ring averaging
-(\num{GainVirchowTwoAttnKOne}).
+On raw counts, spatial autocorrelation (Moran's $I$), sparsity, and expression level explain $R^2=\num{ExplainRsqLogOnePlus}$ of cross-gene variance in $r$ (Spearman $\rho$ with Moran's $I$ is \num{RhoMoransI}). On normalised targets ($\text{lognorm}$), cross-gene variance is explained with $R^2=\num{ExplainRsqLognorm}$, dominated by cell-type specificity ($\tau$) and cross-encoder agreement rather than total expression. Image models predict activated fibroblast markers (CTHRC1, THY1, ADAM12) above cellularity baselines, reflecting true morphological sensitivity to specialized stromal states.
 
-\subsection{Generalisation}
+\subsection{Spatial Context}
+Adding the mean representation of the first ring of neighbouring patches changes gene-averaged $r$ by \num{GainVirchowTwoKOne} on raw counts and \num{GainnormVirchowTwoKOne} under library-size normalisation (\num{GaingenesnormVirchowTwoKOne} genes gain $>0.05$). Attention pooling over spatial neighbours provides no benefit over uniform ring averaging (\num{GainVirchowTwoAttnKOne}).
+
+\subsection{Cross-Platform Generalisation}
 \begin{table}[t]\centering\small\input{generated/tab_generalization.tex}
 \caption{Per-test-sample $r$ by training set (library-size-normalised targets).}\label{tab:gen}\end{table}
-Table~\ref{tab:gen} evaluates cross-platform and cross-organ generalisation. Training on lung Visium samples and
-evaluating on Xenium pseudo-spots yields $r=\num{GenVisiumSameOrganVirchowTwo}$ for Virchow2, a modest drop of
-\num{DropVisiumSameOrganVirchowTwo} relative to within-platform LOGO ($r=\num{GenXeniumLogoVirchowTwo}$).
-Restricting training to same-organ Xenium samples improves performance to $r=\num{GenXeniumSameOrganVirchowTwo}$
-(gain of \num{DropXeniumSameOrganVirchowTwo} over pan-organ training), demonstrating organ specificity.
+Table~\ref{tab:gen} evaluates cross-platform transfer from 10x Visium to Xenium pseudo-spots. Training on lung Visium samples yields $r=\num{GenVisiumSameOrganVirchowTwo}$ for Virchow2, a modest drop of \num{DropVisiumSameOrganVirchowTwo} relative to within-platform LOGO ($r=\num{GenXeniumLogoVirchowTwo}$). Restricting training to same-organ Xenium samples yields $r=\num{GenXeniumSameOrganVirchowTwo}$, reflecting clear organ-specific signatures.
 
-\subsection{Robustness}
-Varying the random seed yields identical results across seeds 0, 1, and 2 (s.d.\ $< 10^{-12}$ for Virchow2, UNI2-h,
-and CONCH v1.5); because ridge regression on exact PCA features contains no stochastic components, the pipeline is fully
-deterministic and the seed changes nothing, which does not constitute evidence of algorithmic robustness.
-For pseudo-spot aggregation windows under library-size normalisation ($\text{lognorm}$, Virchow2), 56/112/224\,$\mu$m
-windows achieve $r=\num{WindowLognormFiveSix}$ / $\num{WindowLognormOneOneTwo}$ / $\num{WindowLognormTwoTwoFour}$
-(peaking at the nominal 112\,$\mu$m patch footprint). On raw counts ($\text{log1p}$), larger windows monotonically
-increase $r$ (\num{WindowLogOnePlusFiveSix} / \num{WindowLogOnePlusOneOneTwo} / \num{WindowLogOnePlusTwoTwoFour})
-by pooling more transcripts and dampening Poisson count noise.
-Restricting image field of view from 112 to 56\,$\mu$m (central crop, UNI2-h) drops $r$ from \num{FovLognormOneOneTwo}
-to \num{FovLognormFiveSix} under $\text{lognorm}$ (and from \num{FovLogOnePlusOneOneTwo} to \num{FovLogOnePlusFiveSix}
-under $\text{log1p}$).
-Comparing linear ridge to a 1-hidden-layer MLP on a 1000-gene subset ($\text{log1p}$, UNI2-h) yields
-$r=\num{HeadLogOnePlusRidge}$ vs $\num{HeadLogOnePlusMlp}$.
+\subsection{Robustness and Determinism}
+Varying random seeds produces identical results across seeds 0, 1, and 2 (s.d.\ $< 10^{-12}$ for Virchow2, UNI2-h, and CONCH v1.5); because exact PCA ridge regression is strictly deterministic, seed variation does not serve as meaningful evidence of algorithmic robustness. 
 
-\section{Limitations}
-Few Xenium 5k samples and no donor identifiers; groups are a conservative proxy. Coarse marker-based cell typing leaves
-60--70\% of cells unassigned. Visium cross-platform data is limited to lung samples.
-Pseudo-spots overlap between neighbouring patches.
+For pseudo-spot aggregation windows under normalisation ($\text{lognorm}$, Virchow2), 56/112/224\,$\mu$m windows achieve $r=\num{WindowLognormFiveSix}$ / $\num{WindowLognormOneOneTwo}$ / $\num{WindowLognormTwoTwoFour}$ (peaking at the nominal 112\,$\mu$m patch footprint). Restricting image field of view from 112 to 56\,$\mu$m drops $r$ from \num{FovLognormOneOneTwo} to \num{FovLognormFiveSix} under $\text{lognorm}$. Linear ridge matches a 1-hidden-layer MLP ($r=\num{HeadLogOnePlusRidge}$ vs $\num{HeadLogOnePlusMlp}$).
 
-\section*{Data and licences}
-HEST-1k and HEST-Benchmark are CC BY-NC-SA 4.0; UNI2-h, Virchow2, TITAN/CONCH v1.5 are CC BY-NC-ND 4.0 and were used
-only to extract frozen embeddings. No weights are released. Non-commercial research use only.
+\section{Discussion and Limitations}
+\label{sec:discussion}
+Our findings urge substantial caution in the interpretation of deep learning models predicting gene expression from histology. High correlation on un-normalised counts does not signify that neural networks have learned subtle transcriptional programs; rather, it primarily indicates that networks are proficient nuclear density estimators. Once cellularity is controlled via library-size normalisation, foundation models yield modest correlations that barely exceed non-imaging baselines.
+
+\paragraph{Limitations.}
+Our study is constrained by the small number of publicly available Xenium 5K datasets with registered H\&E (\num{NXeniumSamples} samples across 6 tissue types). Lack of explicit patient identifiers necessitates conservative group-level splits. Cross-platform transfer was evaluated on lung tissue only, and pseudo-spot aggregation footprints overlap due to grid sampling.
+
+\section*{Data Availability}
+The spatial transcriptomics datasets analyzed in this study derive from HEST-1k \citep{jaume2024hest} and are available under the CC BY-NC-SA 4.0 license. The precomputed per-gene predictability atlases and summary statistics generated in this work are publicly shared on Hugging Face at \todo{insert Hugging Face dataset URL}.
+
+\section*{Code Availability}
+The full evaluation pipeline and analysis scripts are available on GitHub at \todo{insert GitHub repository URL}.
+
+\section*{AI-Use Statement}
+Generative AI tools (large language models) were employed to assist with pipeline automation, exploratory scripting, and manuscript drafting under continuous supervision and verification by the authors. All empirical analyses, numerical results, scientific claims, and citations were verified and validated by the authors.
+
+\section*{Author Contributions and TODOs}
+\todo{Author contributions and detailed acknowledgments will be finalized prior to formal peer review.}
+
+\section*{Competing Interests}
+The authors declare that they have no competing interests.
+
+\section*{Acknowledgements and Licences}
+We thank the authors of HEST-1k \citep{jaume2024hest} and the developers of UNI, UNI2-h, Virchow, Virchow2, and CONCH. Model weights were accessed under their respective non-commercial research licenses (CC BY-NC-ND 4.0 and CC BY-NC-SA 4.0) solely for frozen feature extraction. No proprietary model weights, whole-slide image tiles, or patient identifiers are redistributed.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

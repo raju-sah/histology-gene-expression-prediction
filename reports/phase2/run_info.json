@@ -6,12 +6,15 @@
     "TENX187",
     "TENX188",
     "NCBI887",
-    "NCBI888"
+    "NCBI888",
+    "TENX158",
+    "TENX157",
+    "TENX143"
   ],
   "encoders": [
     "uni2_h",
     "virchow2",
     "conch_v15"
   ],
-  "n_genes": 5001
+  "n_genes": 4624
 }

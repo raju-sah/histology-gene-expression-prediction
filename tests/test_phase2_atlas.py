@@ -14,7 +14,7 @@ def test_atlas_script_end_to_end(tmp_path):
     summ, flags = run_phase2_atlas.main(["--root", str(tmp_path / "emb"), "--out", str(tmp_path / "rep"),
                                          "--encoders", "uni2_h", "virchow2", "hoptimus1", "--block", "16",
                                          "--null-genes", "20", "--no-log"])
-    assert set(summ.model) == {"uni2_h", "virchow2", "composition", "ncells"}   # hoptimus1 absent -> skipped
+    assert set(summ.model) == {"uni2_h", "virchow2", "composition", "ncells", "composition_ncells"}   # hoptimus1 absent -> skipped
     assert not flags, flags
     s = summ[summ.y_kind == "log1p"].set_index("model")
     assert s.loc["uni2_h", "pearson_mean"] > 0.2 > abs(s.loc["ncells", "pearson_mean"])
@@ -44,4 +44,4 @@ def test_plot_on_real_atlas_output(tmp_path):
                            "virchow2", "--block", "16", "--null-genes", "10", "--no-log", "--y-kind", "log1p"])
     plot_phase2.main(["--table", str(tmp_path / "rep/log1p/gene_table.csv"), "--out", str(tmp_path / "fig")])
     s = pd.read_csv(tmp_path / "fig/fig_summary.csv")
-    assert list(s.model) == ["uni2_h", "virchow2", "composition", "ncells"]
+    assert set(s.model) == {"uni2_h", "virchow2", "composition", "ncells", "composition_ncells"}

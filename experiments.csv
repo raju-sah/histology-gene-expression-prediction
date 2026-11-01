@@ -64,3 +64,15 @@ date,commit,encoder,task,split,head,metric,value,n_test,notes
 2026-10-31,4100d4a,virchow2,xenium5k_atlas,logo_5groups,ridge_window224um,pearson_mean,0.1507,,y=lognorm
 2026-10-31,4100d4a,uni2_h,xenium5k_atlas,logo_5groups,ridge_fov112um,pearson_mean,0.1476,,y=lognorm
 2026-10-31,4100d4a,uni2_h_c56,xenium5k_atlas,logo_5groups,ridge_fov56um,pearson_mean,0.1167,,y=lognorm
+2026-11-01,2ba75b8,uni2_h,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.4792,81671,"y=log1p;genes=4624;ci95=[0.397,0.548];null=-0.000"
+2026-11-01,2ba75b8,virchow2,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.5191,81671,"y=log1p;genes=4624;ci95=[0.444,0.574];null=-0.000"
+2026-11-01,2ba75b8,conch_v15,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.4736,81671,"y=log1p;genes=4624;ci95=[0.393,0.536];null=-0.000"
+2026-11-01,2ba75b8,composition,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.4902,81671,"y=log1p;genes=4624;ci95=[0.424,0.548];null=-0.000"
+2026-11-01,2ba75b8,ncells,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.4445,81671,"y=log1p;genes=4624;ci95=[0.354,0.528];null=-0.000"
+2026-11-01,2ba75b8,composition_ncells,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.5033,81671,"y=log1p;genes=4624;ci95=[0.432,0.566];null=-0.000"
+2026-11-01,2ba75b8,uni2_h,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.1476,81671,"y=lognorm;genes=4624;ci95=[0.130,0.166];null=0.001"
+2026-11-01,2ba75b8,virchow2,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.1930,81671,"y=lognorm;genes=4624;ci95=[0.164,0.215];null=0.001"
+2026-11-01,2ba75b8,conch_v15,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.1350,81671,"y=lognorm;genes=4624;ci95=[0.111,0.156];null=0.001"
+2026-11-01,2ba75b8,composition,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.1526,81671,"y=lognorm;genes=4624;ci95=[0.126,0.172];null=0.001"
+2026-11-01,2ba75b8,ncells,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.2140,81671,"y=lognorm;genes=4624;ci95=[0.149,0.294];null=0.001"
+2026-11-01,2ba75b8,composition_ncells,xenium5k_atlas,logo_8groups,ridge_pergene_alpha_pca256,pearson_mean,0.1827,81671,"y=lognorm;genes=4624;ci95=[0.140,0.222];null=0.001"

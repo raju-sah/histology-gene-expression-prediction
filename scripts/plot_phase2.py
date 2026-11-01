@@ -23,8 +23,8 @@ GRID = "#e6e5e0"
 DARKLINE = "#52514e"  # dark gray
 GRAY = "#8c8b85"
 PALETTE = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#6250d6"]
-BASELINES = ("composition", "ncells")
-DERIVED = ("best_encoder", "encoder_sd", "image_minus_composition")  # summary columns in gene_table.csv, not encoders
+BASELINES = ("composition", "ncells", "composition_ncells")
+DERIVED = ("best_encoder", "encoder_sd", "image_minus_composition", "image_minus_ncells", "image_minus_comb")  # summary columns in gene_table.csv, not encoders
 BLUES1 = LinearSegmentedColormap.from_list("blues1", ["#f4f7fb", "#2a78d6"])
 
 
@@ -250,6 +250,8 @@ def fig_image_vs_composition(df, best, color, out_dir, paths):
 def write_summary(df, encoders, out_dir, paths):
     rows = []
     for name in encoders + list(BASELINES):
+        if f"r_{name}" not in df.columns:
+            continue
         r = pd.to_numeric(df[f"r_{name}"], errors="coerce").dropna().astype(float)
         rows.append({
             "model": name,

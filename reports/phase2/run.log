@@ -1,0 +1,561 @@
+samples ['TENX189', 'TENX160', 'TENX187', 'TENX188', 'NCBI887', 'NCBI888', 'TENX158', 'TENX157', 'TENX143'] | encoders ['uni2_h', 'virchow2', 'conch_v15']
+4624 common genes
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 4000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 4200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 4400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 4600/4624 done
+  logo_cervix_10x: genes 24/24
+  logo_lung_luad_10x: genes 24/24
+  logo_lung_tma_pdl: genes 24/24
+  logo_lymphoid_reactive_10x: genes 24/24
+  logo_ovary_ff_10x: genes 24/24
+  logo_ovary_ffpe_10x: genes 24/24
+  logo_prostate_prad_10x: genes 24/24
+  logo_skin_melanoma_10x: genes 24/24
+  chunk genes 4624/4624 done
+  chunk genes 200/4624 done
+  chunk genes 400/4624 done
+  chunk genes 600/4624 done
+  chunk genes 800/4624 done
+  chunk genes 1000/4624 done
+  chunk genes 1200/4624 done
+  chunk genes 1400/4624 done
+  chunk genes 1600/4624 done
+  chunk genes 1800/4624 done
+  chunk genes 2000/4624 done
+  chunk genes 2200/4624 done
+  chunk genes 2400/4624 done
+  chunk genes 2600/4624 done
+  chunk genes 2800/4624 done
+  chunk genes 3000/4624 done
+  chunk genes 3200/4624 done
+  chunk genes 3400/4624 done
+  chunk genes 3600/4624 done
+  chunk genes 3800/4624 done
+  chunk genes 4000/4624 done
+  chunk genes 4200/4624 done
+  chunk genes 4400/4624 done
+  chunk genes 4600/4624 done
+  chunk genes 4624/4624 done
+  chunk genes 200/4624 done
+  chunk genes 400/4624 done
+  chunk genes 600/4624 done
+  chunk genes 800/4624 done
+  chunk genes 1000/4624 done
+  chunk genes 1200/4624 done
+  chunk genes 1400/4624 done
+  chunk genes 1600/4624 done
+  chunk genes 1800/4624 done
+  chunk genes 2000/4624 done
+  chunk genes 2200/4624 done
+  chunk genes 2400/4624 done
+  chunk genes 2600/4624 done
+  chunk genes 2800/4624 done
+  chunk genes 3000/4624 done
+  chunk genes 3200/4624 done
+  chunk genes 3400/4624 done
+  chunk genes 3600/4624 done
+  chunk genes 3800/4624 done
+  chunk genes 4000/4624 done
+  chunk genes 4200/4624 done
+  chunk genes 4400/4624 done
+  chunk genes 4600/4624 done
+  chunk genes 4624/4624 done
+  chunk genes 200/4624 done
+  chunk genes 400/4624 done
+  chunk genes 600/4624 done
+  chunk genes 800/4624 done
+  chunk genes 1000/4624 done
+  chunk genes 1200/4624 done
+  chunk genes 1400/4624 done
+  chunk genes 1600/4624 done
+  chunk genes 1800/4624 done
+  chunk genes 2000/4624 done
+  chunk genes 2200/4624 done
+  chunk genes 2400/4624 done
+  chunk genes 2600/4624 done
+  chunk genes 2800/4624 done
+  chunk genes 3000/4624 done
+  chunk genes 3200/4624 done
+  chunk genes 3400/4624 done
+  chunk genes 3600/4624 done
+  chunk genes 3800/4624 done
+  chunk genes 4000/4624 done
+  chunk genes 4200/4624 done
+  chunk genes 4400/4624 done
+  chunk genes 4600/4624 done
+  chunk genes 4624/4624 done
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:148: Pandas4Warning: Starting with pandas version 4.0 all arguments of max will be keyword-only.
+  table["r_best_encoder"] = table[rcols].max(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:149: Pandas4Warning: Starting with pandas version 4.0 all arguments of std will be keyword-only.
+  table["r_encoder_sd"] = table[rcols].std(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:150: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  table["r_image_minus_composition"] = table[rcols].mean(1) - table["r_composition"]
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:151: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  table["r_image_minus_ncells"] = table[rcols].mean(1) - table["r_ncells"]
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:152: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  table["r_image_minus_comb"] = table[rcols].mean(1) - table["r_composition_ncells"]
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:179: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_enc = enc_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:180: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  rg_base = base_gf.loc[common_idx].mean(1)
+/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py:190: Pandas4Warning: Starting with pandas version 4.0 all arguments of mean will be keyword-only.
+  fold_diffs = (enc_gf.loc[common_idx].mean(0) - base_gf.loc[common_idx].mean(0)).values
+                model  pearson_mean     ci_lo     ci_hi  median_gene_r  frac_gt_0_3
+0              uni2_h      0.479189  0.397366  0.548469       0.518639     0.738538
+1            virchow2      0.519102  0.444156  0.574436       0.566061     0.756920
+2           conch_v15      0.473609  0.393329  0.536411       0.509903     0.711073
+3         composition      0.490158  0.423873  0.548006       0.529227     0.735078
+4              ncells      0.444525  0.354208  0.527965       0.479544     0.722751
+5  composition_ncells      0.503295  0.432423  0.566411       0.545594     0.746972
+permutation control (uni2_h, 500 genes): mean r = -0.0000
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 1800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 2800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3200/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3400/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3600/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 3800/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 4000/4624 done
+  logo_cervix_10x: genes 200/200
+  logo_lung_luad_10x: genes 200/200
+  logo_lung_tma_pdl: genes 200/200
+  logo_lymphoid_reactive_10x: genes 200/200
+  logo_ovary_ff_10x: genes 200/200
+  logo_ovary_ffpe_10x: genes 200/200
+  logo_prostate_prad_10x: genes 200/200
+  logo_skin_melanoma_10x: genes 200/200
+  chunk genes 4200/4624 done
+Traceback (most recent call last):
+  File "/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py", line 229, in <module>
+    main()
+  File "/home/raju/AI-ML Projects/histology-gene-expression-prediction/scripts/run_phase2_atlas.py", line 103, in main
+    res = run_atlas_chunked(samples, folds, encs, groups, root, DATASET, genes, chunk=a.chunk, fit_cache=shared_fit_cache(root),
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/raju/AI-ML Projects/histology-gene-expression-prediction/src/hestfm/atlas.py", line 96, in run_atlas_chunked
+    raise RuntimeError(f"DISK GUARD: free disk {free_bytes / 1024**3:.2f} GiB is below 5.0 GiB limit. Stopping cleanly.")
+RuntimeError: DISK GUARD: free disk 4.73 GiB is below 5.0 GiB limit. Stopping cleanly.
+EXIT 1 PEAK_RSS_KB 2815704

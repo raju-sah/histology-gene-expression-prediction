@@ -32,6 +32,7 @@ def main():
     (HF_SPACE / "figures" / "lognorm").mkdir(parents=True, exist_ok=True)
 
     # 1. Atlas gene tables
+    common_genes = set(pd.read_csv(REPORTS / "phase2/log1p/gene_table.csv")["gene"])
     for t in ["log1p", "lognorm"]:
         df = pd.read_csv(REPORTS / f"phase2/{t}/gene_table.csv")
         verify_and_copy(df, HF_DATASET / f"atlas_{t}.csv")
@@ -45,6 +46,7 @@ def main():
     # 3. Context gain gene tables and phase 3 summary
     for t in ["log1p", "lognorm"]:
         df = pd.read_csv(REPORTS / f"phase3/{t}/context_gene_table.csv")
+        df = df[df["gene"].isin(common_genes)]
         verify_and_copy(df, HF_DATASET / f"context_gain_{t}.csv")
 
     p3_s_log1p = pd.read_csv(REPORTS / "phase3/log1p/summary.csv")
@@ -65,8 +67,12 @@ def main():
     verify_and_copy(pd.read_csv(REPORTS / "phase5/lognorm/window_size.csv"), HF_DATASET / "robustness_window_lognorm.csv")
     verify_and_copy(pd.read_csv(REPORTS / "phase5/field_of_view.csv"), HF_DATASET / "robustness_fov_log1p.csv")
     verify_and_copy(pd.read_csv(REPORTS / "phase5/lognorm/field_of_view.csv"), HF_DATASET / "robustness_fov_lognorm.csv")
-    verify_and_copy(pd.read_csv(REPORTS / "phase5/field_of_view_genes.csv"), HF_DATASET / "robustness_fov_genes_log1p.csv")
-    verify_and_copy(pd.read_csv(REPORTS / "phase5/lognorm/field_of_view_genes.csv"), HF_DATASET / "robustness_fov_genes_lognorm.csv")
+    df_fov_log1p = pd.read_csv(REPORTS / "phase5/field_of_view_genes.csv")
+    df_fov_log1p = df_fov_log1p[df_fov_log1p["gene"].isin(common_genes)]
+    verify_and_copy(df_fov_log1p, HF_DATASET / "robustness_fov_genes_log1p.csv")
+    df_fov_lognorm = pd.read_csv(REPORTS / "phase5/lognorm/field_of_view_genes.csv")
+    df_fov_lognorm = df_fov_lognorm[df_fov_lognorm["gene"].isin(common_genes)]
+    verify_and_copy(df_fov_lognorm, HF_DATASET / "robustness_fov_genes_lognorm.csv")
 
     # Bundle copies to HF Space data directory
     for f in HF_DATASET.glob("*.csv"):

@@ -1,0 +1,61 @@
+{
+  "coarse_unassigned_pct": 72.29,
+  "cluster_unassigned_pct": 0.0,
+  "n_samples_evaluated": 3,
+  "summary": [
+    {
+      "y_kind": "log1p",
+      "fold": "logo_lymphoid_reactive_10x",
+      "test_group": "lymphoid_reactive_10x",
+      "n_clusters": 17,
+      "r_cluster_composition": 0.5447012280061192,
+      "r_coarse_composition": 0.6830313995959262,
+      "r_ncells": 0.7085108341577151
+    },
+    {
+      "y_kind": "log1p",
+      "fold": "logo_prostate_prad_10x",
+      "test_group": "prostate_prad_10x",
+      "n_clusters": 14,
+      "r_cluster_composition": 0.3534414781199488,
+      "r_coarse_composition": 0.380914296196128,
+      "r_ncells": 0.36979031783075894
+    },
+    {
+      "y_kind": "log1p",
+      "fold": "logo_skin_melanoma_10x",
+      "test_group": "skin_melanoma_10x",
+      "n_clusters": 12,
+      "r_cluster_composition": 0.17246782431969818,
+      "r_coarse_composition": 0.27889365213164524,
+      "r_ncells": 0.3038993690348448
+    },
+    {
+      "y_kind": "lognorm",
+      "fold": "logo_lymphoid_reactive_10x",
+      "test_group": "lymphoid_reactive_10x",
+      "n_clusters": 17,
+      "r_cluster_composition": 0.3271192871881125,
+      "r_coarse_composition": 0.3590005282151319,
+      "r_ncells": 0.3796330016762917
+    },
+    {
+      "y_kind": "lognorm",
+      "fold": "logo_prostate_prad_10x",
+      "test_group": "prostate_prad_10x",
+      "n_clusters": 14,
+      "r_cluster_composition": 0.1555786497859839,
+      "r_coarse_composition": 0.17213741812133582,
+      "r_ncells": 0.16946199825590313
+    },
+    {
+      "y_kind": "lognorm",
+      "fold": "logo_skin_melanoma_10x",
+      "test_group": "skin_melanoma_10x",
+      "n_clusters": 12,
+      "r_cluster_composition": 0.13782138291906576,
+      "r_coarse_composition": 0.19864392303977843,
+      "r_ncells": 0.11928243137656268
+    }
+  ]
+}
