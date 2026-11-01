@@ -13,7 +13,9 @@
 
 \title{Which genes can a pathology foundation model see?\\
 \large Cellularity confounding and transcriptome-wide predictability from H\&E}
-\author{\todo{Author list and affiliations to be added prior to submission}}
+\author{Raju Sah\\
+\small Independent Researcher, Kirtipur, Kathmandu, Nepal\\
+\small \href{mailto:rajucode7@gmail.com}{rajucode7@gmail.com} \quad ORCID: \href{https://orcid.org/0009-0006-0412-6139}{0009-0006-0412-6139}}
 \date{}
 
 \begin{document}
@@ -79,7 +81,7 @@ Models are evaluated by per-gene Pearson correlation $r$ on held-out test groups
 Table~\ref{tab:p1} validates our pipeline against published HEST-Benchmark numbers, reproducing performance across IDC, LUNG, and COAD with $|\Delta| \le 0.001$.
 
 \subsection{A Transcriptome-Wide Predictability Atlas}
-\begin{table}[t]\centering\small\input{generated/tab_atlas.tex}
+\begin{table}[t]\centering\resizebox{\columnwidth}{!}{\input{generated/tab_atlas.tex}}
 \caption{Xenium 5k atlas, leave-one-group-out, \num{AtlasNGenes} genes.}\label{tab:atlas}\end{table}
 \begin{figure}[t]\centering\fig{phase2/figures/fig_r_distribution.png}
 \caption{Per-gene Pearson $r$ on held-out groups.}\label{fig:dist}\end{figure}
@@ -101,7 +103,7 @@ On raw counts, spatial autocorrelation (Moran's $I$), sparsity, and expression l
 Adding the mean representation of the first ring of neighbouring patches changes gene-averaged $r$ by \num{GainVirchowTwoKOne} on raw counts and \num{GainnormVirchowTwoKOne} under library-size normalisation (\num{GaingenesnormVirchowTwoKOne} genes gain $>0.05$). Attention pooling over spatial neighbours provides no benefit over uniform ring averaging (\num{GainVirchowTwoAttnKOne}).
 
 \subsection{Cross-Platform Generalisation}
-\begin{table}[t]\centering\small\input{generated/tab_generalization.tex}
+\begin{table}[t]\centering\resizebox{\columnwidth}{!}{\input{generated/tab_generalization.tex}}
 \caption{Per-test-sample $r$ by training set (library-size-normalised targets).}\label{tab:gen}\end{table}
 Table~\ref{tab:gen} evaluates cross-platform transfer from 10x Visium to Xenium pseudo-spots. Training on lung Visium samples yields $r=\num{GenVisiumSameOrganVirchowTwo}$ for Virchow2, a modest drop of \num{DropVisiumSameOrganVirchowTwo} relative to within-platform LOGO ($r=\num{GenXeniumLogoVirchowTwo}$). Restricting training to same-organ Xenium samples yields $r=\num{GenXeniumSameOrganVirchowTwo}$, reflecting clear organ-specific signatures.
 
@@ -118,19 +120,22 @@ Our results suggest caution when interpreting correlations from histology-to-exp
 Our study is constrained by the small number of publicly available Xenium 5K datasets with registered H\&E (\num{NXeniumSamples} samples across 6 tissue types). Lack of explicit patient identifiers necessitates conservative group-level splits. Cross-platform transfer was evaluated on lung tissue only, and pseudo-spot aggregation footprints overlap due to grid sampling. The cell-count baseline uses Xenium segmentation, so it is an upper reference rather than an image-only competitor; an H\&E nuclei-count baseline was not evaluated. We used linear probes on frozen embeddings following the HEST protocol; fine-tuned models may behave differently.
 
 \section*{Data Availability}
-The spatial transcriptomics datasets analyzed in this study derive from HEST-1k \citep{jaume2024hest} and are available under the CC BY-NC-SA 4.0 license. The precomputed per-gene predictability atlases and summary statistics generated in this work are publicly shared on Hugging Face at \todo{insert Hugging Face dataset URL}.
+The spatial transcriptomics datasets analyzed in this study derive from HEST-1k \citep{jaume2024hest} and are available under the CC BY-NC-SA 4.0 license. The precomputed per-gene predictability atlases and summary statistics generated in this work are publicly shared on Hugging Face at \url{https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas}.
 
 \section*{Code Availability}
-The full evaluation pipeline and analysis scripts are available on GitHub at \todo{insert GitHub repository URL}.
+The full evaluation pipeline and analysis scripts are available on GitHub at \url{https://github.com/raju-sah/histology-gene-expression-prediction}.
 
 \section*{AI-Use Statement}
 The analysis code, experiments and manuscript draft were produced with AI coding agents (Anthropic Claude and Google Gemini) under the author's direction. The author reviewed the results, reported numbers and citations and takes full responsibility for the content.
 
-\section*{Author Contributions and TODOs}
-\todo{Author contributions and detailed acknowledgments will be finalized prior to formal peer review.}
+\section*{Author Contributions}
+R.S. conceived the study, directed the analysis, reviewed the results and wrote the paper.
+
+\section*{Funding}
+This work received no specific funding.
 
 \section*{Competing Interests}
-The authors declare that they have no competing interests.
+The author declares no competing interests.
 
 \section*{Acknowledgements and Licences}
 We thank the authors of HEST-1k \citep{jaume2024hest} and the developers of UNI, UNI2-h, Virchow, Virchow2, and CONCH. Model weights were accessed under their respective non-commercial research licenses (CC BY-NC-ND 4.0 and CC BY-NC-SA 4.0) solely for frozen feature extraction. No proprietary model weights, whole-slide image tiles, or patient identifiers are redistributed.

@@ -2,12 +2,17 @@
   "title": "Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide predictability from H&E",
   "authors": [
     {
-      "name": "TODO",
-      "affiliation": "TODO",
-      "email": "TODO",
+      "name": "Raju Sah",
+      "affiliation": "Independent Researcher, Kirtipur, Kathmandu, Nepal",
+      "email": "rajucode7@gmail.com",
+      "orcid": "0009-0006-0412-6139",
       "corresponding": true
     }
   ],
+  "funding": "None",
+  "competing_interests": "None",
+  "code_url": "https://github.com/raju-sah/histology-gene-expression-prediction",
+  "data_url": "https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas",
   "abstract": "Predicting spatial transcriptomic profiles directly from routine hematoxylin and eosin (H&E) histology images is widely pursued to augment morphological pathology with molecular measurements. However, many benchmarks evaluate models on un-normalised count targets (log(1+count)) and restricted gene panels, which can conflate expression prediction with the number of cells in a spot. Here, we present a systematic predictability atlas across ~5,000 genes measured by Xenium Prime 5K on 9 human tissue samples spanning six organ sites (lung, ovary, cervix, skin, prostate, lymph node) and 8 leave-one-group-out folds. On raw counts, state-of-the-art pathology foundation models (Virchow2, UNI2-h, CONCH v1.5) achieve gene-averaged Pearson correlations up to r=0.519, compared with r=0.445 for the number of cells in each spot (taken from the Xenium cell segmentation, not from the image) and r=0.490 for marker-based cell-type composition. After standard library-size normalisation (lognorm), performance falls to r=0.193 (Virchow2), r=0.148 (UNI2-h) and r=0.135 (CONCH v1.5), against r=0.214 for the cell-count baseline. In paired comparisons with a bootstrap over held-out groups, Virchow2 is statistically indistinguishable from the cell count (difference -0.021, 95% CI [-0.093, 0.027]) and exceeds cell-type composition, while UNI2-h and CONCH v1.5 fall below the cell count. Gene-level features (expression level, sparsity, spatial autocorrelation, cell-type specificity, cross-encoder agreement) jointly explain R^2=0.953 of the variation in per-gene r on raw counts and R^2=0.610 on normalised counts. Our results suggest that much of the apparent predictability of raw counts from histology reflects how many cells a spot contains, and that baselines of this kind should be reported alongside image models.",
   "subject_area": "Bioinformatics",
   "license": "CC-BY-NC-SA 4.0",

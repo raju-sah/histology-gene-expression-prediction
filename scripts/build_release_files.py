@@ -53,7 +53,12 @@ def build_biorxiv_metadata(macros: dict[str, str]) -> Path:
     meta_path = BIORXIV_DIR / "metadata.json"
     data = {
         "title": TITLE,
-        "authors": [{"name": "TODO", "affiliation": "TODO", "email": "TODO", "corresponding": True}],
+        "authors": [{"name": "Raju Sah", "affiliation": "Independent Researcher, Kirtipur, Kathmandu, Nepal",
+                     "email": "rajucode7@gmail.com", "orcid": "0009-0006-0412-6139", "corresponding": True}],
+        "funding": "None",
+        "competing_interests": "None",
+        "code_url": "https://github.com/raju-sah/histology-gene-expression-prediction",
+        "data_url": "https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas",
         "abstract": paper_abstract(macros),
         "subject_area": "Bioinformatics",
         "license": "CC-BY-NC-SA 4.0",
