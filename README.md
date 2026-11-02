@@ -1,13 +1,15 @@
 # Predicting spatial gene expression from H&E with pathology foundation models
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23864896.svg)](https://doi.org/10.5281/zenodo.23864896)
+[![Paper DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23873642.svg)](https://doi.org/10.5281/zenodo.23873642)
+[![Code DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23864896.svg)](https://doi.org/10.5281/zenodo.23864896)
 
 Which genes can be predicted from H&E morphology on Xenium 5k data, and what makes a gene predictable?
 Frozen embeddings from UNI2-h, Virchow2 and CONCH v1.5 (+ ImageNet ResNet50 baseline), linear / small-MLP heads,
 patient/sample-level splits. See [ROADMAP.md](ROADMAP.md) for the plan and [PROGRESS.md](PROGRESS.md) for status.
 
 **Paper:** *Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide
-predictability from H&E* (Raju Sah, 2026). Preprint submitted to bioRxiv; link to be added. Source in [paper/](paper/).
+predictability from H&E* (Raju Sah, 2026). Preprint on Zenodo:
+[doi:10.5281/zenodo.23873642](https://doi.org/10.5281/zenodo.23873642). Source in [paper/](paper/).
 
 **Atlas data:** per-gene predictability statistics on Hugging Face,
 [raju-ai/hest-xenium5k-predictability-atlas](https://huggingface.co/datasets/raju-ai/hest-xenium5k-predictability-atlas).

@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this code or the atlas, please cite it as below."
+message: "If you use this code or the atlas, please cite the preprint (preferred-citation) and this software."
 title: "Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide predictability from H&E"
 type: software
 authors:
@@ -10,8 +10,21 @@ authors:
 doi: "10.5281/zenodo.23864896"
 repository-code: "https://github.com/raju-sah/histology-gene-expression-prediction"
 license: MIT
-version: "1.0.0"
+version: "1.1.0"
 date-released: "2026-11-02"
+preferred-citation:
+  type: article
+  title: "Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide predictability from H&E"
+  authors:
+    - family-names: Sah
+      given-names: Raju
+      orcid: "https://orcid.org/0009-0006-0412-6139"
+  year: 2026
+  publisher:
+    name: Zenodo
+  doi: "10.5281/zenodo.23873642"
+  url: "https://doi.org/10.5281/zenodo.23873642"
+  notes: "Preprint"
 keywords:
   - spatial transcriptomics
   - computational pathology

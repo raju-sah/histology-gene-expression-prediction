@@ -18,7 +18,7 @@ Per-gene and per-model summary statistics from the study *Which genes can a path
 Cellularity confounding and transcriptome-wide predictability from H&E* (Raju Sah, 2026).
 
 - Code: https://github.com/raju-sah/histology-gene-expression-prediction
-- Paper: preprint link to be added.
+- Paper (preprint): https://doi.org/10.5281/zenodo.23873642
 
 The study asks how well frozen pathology foundation models (Virchow2, UNI2-h, CONCH v1.5) predict the expression of
 each gene in the Xenium Prime 5K panel from H&E image patches, and compares them with baselines that use the number
@@ -101,6 +101,8 @@ and this work:
   author = {Raju Sah},
   title  = {Which genes can a pathology foundation model see? Cellularity confounding and transcriptome-wide predictability from {H\&E}},
   year   = {2026},
+  publisher = {Zenodo},
+  doi    = {10.5281/zenodo.23873642},
   note   = {Preprint; code at https://github.com/raju-sah/histology-gene-expression-prediction}
 }
 ```
